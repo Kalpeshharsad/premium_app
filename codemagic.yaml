@@ -16,4 +16,4 @@ workflows:
     publishing:
       email:
         recipients:
-          - ${EMAIL_RECIPIENT}
+          - ${kalpesh.harsad@gmail.com}
