@@ -1,0 +1,19 @@
+configurations:
+  ios-unsigned:
+    name: iOS Unsigned (Jailbreak)
+    environment:
+      flutter: stable
+    scripts:
+      - name: Build Unsigned IPA
+        script: | 
+          flutter build ios --no-codesign
+          mkdir -p build/ios/iphoneos/Payload
+          cp -r build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/
+          cd build/ios/iphoneos
+          zip -r premium_app_unsigned.ipa Payload
+    artifacts:
+      - build/ios/iphoneos/*.ipa
+    publishing:
+      email:
+        recipients:
+          - ${EMAIL_RECIPIENT}
