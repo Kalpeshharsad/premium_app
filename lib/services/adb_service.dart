@@ -58,4 +58,7 @@ class ADBService {
   static const int KEYCODE_VOLUME_UP = 24;
   static const int KEYCODE_VOLUME_DOWN = 25;
   static const int KEYCODE_MUTE = 164;
+  static const int KEYCODE_MENU = 82;
+  static const int KEYCODE_CHANNEL_UP = 166;
+  static const int KEYCODE_CHANNEL_DOWN = 167;
 }

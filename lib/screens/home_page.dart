@@ -62,6 +62,8 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 40),
                   _buildVolumeControls(),
                   const SizedBox(height: 40),
+                  _buildChannelControls(),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -78,7 +80,7 @@ class _HomePageState extends State<HomePage> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Google TV', style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28)),
+            Text('GTV Remote', style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28)),
             const Text('Remote Control', style: TextStyle(color: Colors.white60)),
           ],
         ),
@@ -170,6 +172,7 @@ class _HomePageState extends State<HomePage> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildCircularButton(Icons.arrow_back_rounded, 'Back', ADBService.KEYCODE_BACK),
+        _buildCircularButton(Icons.menu_rounded, 'Menu', ADBService.KEYCODE_MENU),
         _buildCircularButton(Icons.home_rounded, 'Home', ADBService.KEYCODE_HOME, color: AppTheme.primaryColor),
         _buildCircularButton(Icons.power_settings_new_rounded, 'Power', ADBService.KEYCODE_POWER, color: AppTheme.secondaryColor),
       ],
@@ -177,18 +180,50 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildVolumeControls() {
-    return GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(icon: const Icon(Icons.volume_down_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_DOWN)),
-            const Icon(Icons.volume_up_rounded, size: 20, color: Colors.white24),
-            IconButton(icon: const Icon(Icons.volume_up_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_UP)),
-          ],
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8.0),
+          child: Text('VOLUME', style: TextStyle(fontSize: 10, color: Colors.white24, fontWeight: FontWeight.bold, letterSpacing: 2)),
         ),
-      ),
+        GlassCard(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(icon: const Icon(Icons.volume_down_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_DOWN)),
+                IconButton(icon: const Icon(Icons.volume_off_rounded, size: 20, color: Colors.white24), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_MUTE)),
+                IconButton(icon: const Icon(Icons.volume_up_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_UP)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChannelControls() {
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8.0),
+          child: Text('CHANNEL', style: TextStyle(fontSize: 10, color: Colors.white24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+        ),
+        GlassCard(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(icon: const Icon(Icons.keyboard_arrow_down_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_DOWN)),
+                const Icon(Icons.swap_vert_rounded, size: 20, color: Colors.white24),
+                IconButton(icon: const Icon(Icons.keyboard_arrow_up_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_UP)),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
