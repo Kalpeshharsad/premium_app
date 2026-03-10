@@ -1,26 +1,37 @@
 workflows:
-  ios-unsigned:
-    name: iOS Unsigned (Jailbreak)
+  ios-workflow:
+    name: iOS IPA Build (No Code Signing - For TrollStore)
+    max_build_duration: 60
     environment:
       flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        APP_STORE_CONNECT_KEY_IDENTIFIER: ""
+        APP_STORE_CONNECT_ISSUER_ID: ""
+        APP_STORE_CONNECT_PRIVATE_KEY: ""
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
     scripts:
-      - name: Build Unsigned IPA
-        script: | 
-          set -e
-          
-          # Force unsigned build via environment variables
-          export CODE_SIGNING_ALLOWED=NO
-          export CODE_SIGNING_REQUIRED=NO
-          export CODE_SIGN_IDENTITY=""
-          
+      - name: Flutter dependencies
+        script: |
+          flutter packages pub get
+      - name: Build iOS App Bundle (No Code Signing)
+        script: |
           flutter build ios --release --no-codesign
-          
-          # Create Payload and IPA
-          rm -rf build/ios/iphoneos/Payload
-          mkdir -p build/ios/iphoneos/Payload
-          cp -r build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/
-          cd build/ios/iphoneos
-          zip -r premium_app_unsigned.ipa Payload
+      - name: Create Proper IPA for TrollStore
+        script: |
+          cd $CM_BUILD_DIR/build/ios/iphoneos
+          # Create the ipa directory first
+          mkdir -p $CM_BUILD_DIR/build/ios/ipa
+          # Create proper IPA structure: Payload/Runner.app
           rm -rf Payload
+          mkdir -p Payload
+          cp -R Runner.app Payload/
+          # Create the IPA with proper structure
+          xcrun zip -r $CM_BUILD_DIR/build/ios/ipa/Runner.ipa Payload
+          echo "IPA created at $CM_BUILD_DIR/build/ios/ipa/Runner.ipa"
+          ls -la $CM_BUILD_DIR/build/ios/ipa/
     artifacts:
-      - build/ios/iphoneos/*.ipa
+      - build/ios/ipa/*.ipa
