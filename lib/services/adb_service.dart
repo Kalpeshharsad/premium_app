@@ -2,10 +2,48 @@ import 'dart:io';
 import 'package:flutter_adb/adb_connection.dart';
 import 'package:flutter_adb/adb_crypto.dart';
 import 'package:flutter_adb/adb_stream.dart';
+import 'package:flutter_adb/adb_protocol.dart';
 import 'key_service.dart';
 import 'package:pointycastle/export.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+
+/// Custom crypto implementation to fix signing bugs and set a proper identity.
+class GTVRemoteCrypto extends AdbCrypto {
+  final AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> _myKeyPair;
+
+  GTVRemoteCrypto(this._myKeyPair) : super(keyPair: _myKeyPair);
+
+  @override
+  Uint8List signAdbTokenPayload(Uint8List payload) {
+    // The original AdbCrypto uses RSASigner which hashes the token again.
+    // ADB expects a raw RSA private key operation on the (already padded) payload.
+    final engine = RSAEngine()
+      ..init(false, PrivateKeyParameter<RSAPrivateKey>(_myKeyPair.privateKey));
+    
+    // We must ensure the payload is padded to 256 bytes (2048 bits)
+    // AdbCrypto.SIGNATURE_PADDING is 236 bytes? No, let's look at the original.
+    // Actually, AdbCrypto already provides a padding list.
+    
+    // For safety, let's reconstruct the PKCS1 v1.5 padding specifically for SHA-1.
+    final List<int> padding = [
+      0x00, 0x01,
+      for (int i = 0; i < 218; i++) 0xff,
+      0x00,
+      0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14,
+    ];
+    
+    final fullPayload = Uint8List.fromList([...padding, ...payload]);
+    return engine.process(fullPayload);
+  }
+
+  @override
+  Uint8List getAdbPublicKeyPayload() {
+    final adbPublicKey = AdbCrypto.convertRsaPublicKeyToAdbFormat(_myKeyPair.publicKey);
+    final keyString = '${base64Encode(adbPublicKey)} gtv@remote\x00';
+    return utf8.encode(keyString);
+  }
+}
 
 class ADBService {
   AdbConnection? _connection;
@@ -17,17 +55,18 @@ class ADBService {
 
   Future<bool> connect(String ip, {int port = 5555}) async {
     try {
+      // Set a more stable identifier for the host
+      AdbProtocol.CONNECT_PAYLOAD = utf8.encode('host:gtvremote:GTVRemote\x00');
+
       // Load or generate keys
       var keyPair = await KeyService.loadKeys();
       if (keyPair == null) {
         keyPair = AdbCrypto.generateAdbKeyPair();
         await KeyService.saveKeys(keyPair);
         print('Generated and saved new ADB keys');
-      } else {
-        print('Loaded existing ADB keys');
       }
 
-      final AdbCrypto crypto = AdbCrypto(keyPair: keyPair);
+      final GTVRemoteCrypto crypto = GTVRemoteCrypto(keyPair);
       _connection = AdbConnection(ip, port, crypto);
       
       // Update fingerprint
