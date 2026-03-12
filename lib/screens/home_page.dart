@@ -4,7 +4,7 @@ import '../theme/app_theme.dart';
 import '../services/adb_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
   void _handleConnect() async {
     setState(() => _isConnecting = true);
     final success = await _adbService.connect(_ipController.text);
+    if (!mounted) return;
     setState(() => _isConnecting = false);
     
     if (success) {
@@ -101,15 +102,9 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
+          // Background
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppTheme.backgroundColor, Color(0xFF1E1B4B)],
-              ),
-            ),
+            color: AppTheme.backgroundColor,
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -184,7 +179,11 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             _isConnecting
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : IconButton(
                     onPressed: _handleConnect,
                     icon: Icon(Icons.sync_rounded, color: AppTheme.primaryColor),
@@ -199,7 +198,7 @@ class _HomePageState extends State<HomePage> {
     return Center(
       child: GlassCard(
         borderRadius: 100,
-        child: Container(
+        child: SizedBox(
           width: 200,
           height: 200,
           child: Stack(

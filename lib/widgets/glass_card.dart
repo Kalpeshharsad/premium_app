@@ -7,11 +7,11 @@ class GlassCard extends StatelessWidget {
   final double blur;
 
   const GlassCard({
-    Key? key,
+    super.key,
     required this.child,
     this.borderRadius = 20.0,
     this.blur = 10.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +21,11 @@ class GlassCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1.5,
+              color: Colors.white.withValues(alpha: 0.05),
+              width: 1,
             ),
           ),
           child: child,

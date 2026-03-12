@@ -7,7 +7,7 @@ void main() {
 }
 
 class AntigravityApp extends StatelessWidget {
-  const AntigravityApp({Key? key}) : super(key: key);
+  const AntigravityApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,3 +19,4 @@ class AntigravityApp extends StatelessWidget {
     );
   }
 }
+

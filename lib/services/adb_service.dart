@@ -1,5 +1,5 @@
-import 'dart:io';
-import 'dart:typed_data';
+// ignore_for_file: constant_identifier_names
+import 'package:flutter/foundation.dart';
 import 'package:flutter_adb/adb_connection.dart';
 import 'package:flutter_adb/adb_crypto.dart';
 import 'package:flutter_adb/adb_stream.dart';
@@ -64,7 +64,7 @@ class ADBService {
       if (keyPair == null) {
         keyPair = AdbCrypto.generateAdbKeyPair();
         await KeyService.saveKeys(keyPair);
-        print('Generated and saved new ADB keys');
+        debugPrint('Generated and saved new ADB keys');
       }
 
       final GTVRemoteCrypto crypto = GTVRemoteCrypto(keyPair);
@@ -72,17 +72,17 @@ class ADBService {
       
       // Update fingerprint
       _calculateFingerprint(crypto);
-      print('Current Fingerprint: $_fingerprint');
+      debugPrint('Current Fingerprint: $_fingerprint');
       
       final bool connected = await _connection!.connect();
       
       if (connected) {
         _isConnected = true;
-        print('Connected to $ip:$port');
+        debugPrint('Connected to $ip:$port');
         return true;
       }
     } catch (e) {
-      print('Connection failed: $e');
+      debugPrint('Connection failed: $e');
       _isConnected = false;
     }
     return false;
@@ -118,7 +118,7 @@ class ADBService {
       await stream.writeString('input keyevent $keyCode\n');
       stream.close();
     } catch (e) {
-      print('Failed to send key event: $e');
+      debugPrint('Failed to send key event: $e');
     }
   }
 
@@ -131,7 +131,7 @@ class ADBService {
       await stream.writeString('input text "$escapedText"\n');
       stream.close();
     } catch (e) {
-      print('Failed to send text: $e');
+      debugPrint('Failed to send text: $e');
     }
   }
 
@@ -142,7 +142,7 @@ class ADBService {
       await stream.writeString('settings put system screen_brightness $value\n');
       stream.close();
     } catch (e) {
-      print('Failed to set brightness: $e');
+      debugPrint('Failed to set brightness: $e');
     }
   }
 
