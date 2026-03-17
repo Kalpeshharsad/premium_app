@@ -1,17 +1,65 @@
-# premium_app
+# Antigravity - Premium Google TV Remote for iOS
 
-A new Flutter project.
+![Antigravity Remote Mockup](file:///home/kal/.gemini/antigravity/brain/004f827d-0023-408b-afd2-2c3f45702d8a/google_tv_remote_mockup_1773780915370.png)
 
-## Getting Started
+Antigravity is a state-of-the-art, premium Google TV remote application for iOS, built with Flutter. It offers a sleek, glassmorphism-inspired interface and robust control over your Android TV or Google TV devices using ADB communication.
 
-This project is a starting point for a Flutter application.
+## ✨ Features
 
-A few resources to get you started if this is your first Flutter project:
+- 🌐 **Auto-Discovery**: Automatically finds Google TV devices on your local network.
+- 📱 **Full D-Pad Control**: Navigate menus with a high-fidelity touch interface.
+- 🔊 **Volume & Channel Management**: Precise sliders and buttons for volume and channel switching.
+- 🔆 **Brightness Control**: Adjust your TV's brightness directly from the app.
+- ⌨️ **Virtual Keyboard**: Send text to your TV effortlessly from your phone.
+- 💾 **Device Management**: Save and manage multiple TV devices for quick access.
+- 💎 **Premium UI**: Modern dark theme with glassmorphism effects for a high-end experience.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## 🛠️ Tech Stack
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Framework**: [Flutter](https://flutter.dev/)
+- **Communication**: ADB (Android Debug Bridge) via `flutter_adb`
+- **Discovery**: Multicast DNS (`multicast_dns`)
+- **Persistence**: `shared_preferences`
+- **Security**: `crypto` & `pointycastle`
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) installed on your machine.
+- An iOS device or simulator for testing.
+- A Google TV / Android TV device.
+
+### TV Setup
+
+1.  Enable **Developer Options** on your TV (Go to Settings > About > Click "Build Number" 7 times).
+2.  Go to Developer Options and enable **ADB Debugging** and **Wireless Debugging**.
+3.  Note your TV's IP address.
+
+### Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/Kalpeshharsad/premium_app.git
+    cd premium_app
+    ```
+2.  Install dependencies:
+    ```bash
+    flutter pub get
+    ```
+3.  Run the application:
+    ```bash
+    flutter run
+    ```
+
+## 📖 Usage
+
+1.  Ensure your iOS device and TV are on the same Wi-Fi network.
+2.  Open the Antigravity app.
+3.  The app will attempt to discover your TV automatically. If not found, enter the TV's IP address manually in the connection card.
+4.  Accept the ADB debugging prompt on your TV screen.
+5.  Enjoy your premium remote experience!
+
+---
+
+Developed with ❤️ for a better TV experience.
