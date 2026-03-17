@@ -1,4 +1,4 @@
-# Antigravity - Premium Google TV Remote for iOS
+# Premium- Google TV Remote for iOS
 
 Antigravity is a state-of-the-art, premium Google TV remote application for iOS, built with Flutter. It offers a sleek, glassmorphism-inspired interface and robust control over your Android TV or Google TV devices using ADB communication.
 
@@ -39,7 +39,6 @@ Antigravity is a state-of-the-art, premium Google TV remote application for iOS,
 1.  Clone the repository:
     ```bash
     git clone https://github.com/Kalpeshharsad/GoogleTVremote-iOS.git
-    cd premium_app
     ```
 2.  Install dependencies:
     ```bash
