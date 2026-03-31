@@ -95,7 +95,7 @@ class _HomePageState extends State<HomePage> {
           _showPairingDialog(ipToConnect);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not reach TV. Check IP and Network.')),
+            SnackBar(content: Text(_wifiService.lastError ?? 'Could not reach TV. Check IP and Network.')),
           );
         }
         return;

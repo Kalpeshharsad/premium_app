@@ -161,6 +161,7 @@ class WifiService {
   bool _isConnected = false;
   bool _isPairing = false;
   String? _pairedIp;
+  String? lastError;
   SecureSocket? _pairingSocket;
   SecureSocket? _controlSocket;
   _MsgReader? _reader;
@@ -169,10 +170,16 @@ class WifiService {
   bool get isPairing => _isPairing;
 
   SecurityContext _makeContext() {
-    final ctx = SecurityContext(withTrustedRoots: false);
-    ctx.useCertificateChainBytes(utf8.encode(_kClientCert));
-    ctx.usePrivateKeyBytes(utf8.encode(_kClientKey));
-    return ctx;
+    try {
+      final ctx = SecurityContext(withTrustedRoots: false);
+      ctx.useCertificateChainBytes(utf8.encode(_kClientCert));
+      ctx.usePrivateKeyBytes(utf8.encode(_kClientKey));
+      return ctx;
+    } catch (e) {
+      debugPrint('WifiService: _makeContext failed: $e');
+      lastError = 'SecurityContext error: $e';
+      rethrow;
+    }
   }
 
   // ── Connect (post-pairing) ───────────────────────────────────────────────
@@ -211,22 +218,38 @@ class WifiService {
         ip, 6467,
         context: _makeContext(),
         onBadCertificate: (c) => true,
-        timeout: const Duration(seconds: 5),
+        timeout: const Duration(seconds: 10),
       );
       debugPrint('WifiService: connected on 6467 with client cert');
     } catch (e) {
-      debugPrint('WifiService: 6467 failed ($e), trying 6466...');
+      debugPrint('WifiService: 6467 failed ($e)');
+      lastError = '6467 failed: $e';
       try {
+        debugPrint('WifiService: trying 6466...');
         _pairingSocket = await SecureSocket.connect(
           ip, 6466,
           context: _makeContext(),
           onBadCertificate: (c) => true,
-          timeout: const Duration(seconds: 5),
+          timeout: const Duration(seconds: 10),
         );
         debugPrint('WifiService: connected on 6466 with client cert');
       } catch (e2) {
-        debugPrint('WifiService: all ports failed: $e2');
-        return false;
+        debugPrint('WifiService: 6466 failed ($e2)');
+        lastError = '6466 failed: $e2';
+        try {
+          debugPrint('WifiService: trying 8601 (TCL fallback)...');
+          _pairingSocket = await SecureSocket.connect(
+            ip, 8601,
+            context: _makeContext(),
+            onBadCertificate: (c) => true,
+            timeout: const Duration(seconds: 10),
+          );
+          debugPrint('WifiService: connected on 8601');
+        } catch (e3) {
+          debugPrint('WifiService: all ports failed: $e3');
+          lastError = 'All ports (6467, 6466, 8601) failed. Last error: $e3';
+          return false;
+        }
       }
     }
 
