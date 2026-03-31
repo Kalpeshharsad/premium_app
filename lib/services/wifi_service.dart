@@ -223,6 +223,7 @@ class WifiService {
       final controlReader = _MsgReader();
       _controlSocket!.listen((d) => controlReader.feed(d), onDone: disconnect, onError: (_) => disconnect());
       
+      final ready = Completer<bool>();
       controlReader.stream.listen((msg) {
         if (_hasField(msg, 1)) { // remote_configure
           _controlSocket?.add(_remoteConfigure());
@@ -231,14 +232,14 @@ class WifiService {
           _controlSocket?.add(_remoteSetActive(611));
           _controlSocket?.flush();
         } else if (_hasField(msg, 8)) { // remote_ping_request
-          // Echo ping (field 8 has val1 at sub-field 1)
-          // Simple fixed ping response usually works for V2
           _controlSocket?.add(_remotePingResponse(0));
           _controlSocket?.flush();
+        } else if (_hasField(msg, 40)) { // remote_start
+          if (!ready.isCompleted) ready.complete(true);
         }
       });
 
-      return true;
+      return await ready.future.timeout(const Duration(seconds: 5), onTimeout: () => true);
     } catch (e) {
       lastError = 'Connect failed: $e';
       _isConnected = false;
@@ -344,8 +345,13 @@ class WifiService {
 
   Future<void> sendKeyEvent(int keyCode) async {
     if (!_isConnected || _controlSocket == null) return;
+    
+    // Convert ADB ENTER (66) to DPAD_CENTER (23) for better WiFi compat
+    int finalCode = keyCode;
+    if (keyCode == 66) finalCode = 23;
+    
     // Direction 3 = SHORT press
-    _controlSocket!.add(_remoteKeyInject(keyCode, 3));
+    _controlSocket!.add(_remoteKeyInject(finalCode, 3));
     await _controlSocket!.flush();
   }
 
