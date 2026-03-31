@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/glass_card.dart';
 import '../theme/app_theme.dart';
 import '../services/adb_service.dart';
+import '../services/wifi_service.dart';
 import '../services/discovery_service.dart';
 import '../services/storage_service.dart';
 import '../models/tv_device.dart';
@@ -15,13 +16,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ADBService _adbService = ADBService();
+  final WifiService _wifiService = WifiService();
   final DiscoveryService _discoveryService = DiscoveryService();
   final StorageService _storageService = StorageService();
   
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _textController = TextEditingController();
+  final TextEditingController _pinController = TextEditingController();
   
   bool _isConnecting = false;
+  bool _isWifiMode = false;
   double _brightness = 127;
   
   List<TvDevice> _savedDevices = [];
@@ -49,6 +53,7 @@ class _HomePageState extends State<HomePage> {
     _discoveryService.stopDiscovery();
     _ipController.dispose();
     _textController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
@@ -71,7 +76,19 @@ class _HomePageState extends State<HomePage> {
     }
 
     setState(() => _isConnecting = true);
-    final success = await _adbService.connect(ipToConnect);
+    
+    bool success = false;
+    if (_isWifiMode) {
+      success = await _wifiService.connect(ipToConnect);
+      if (_wifiService.isPairing) {
+        setState(() => _isConnecting = false);
+        _showPairingDialog(ipToConnect);
+        return;
+      }
+    } else {
+      success = await _adbService.connect(ipToConnect);
+    }
+
     if (!mounted) return;
     setState(() => _isConnecting = false);
     
@@ -209,7 +226,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                   style: const TextStyle(color: Colors.white),
                   onSubmitted: (val) {
-                    _adbService.sendText(val);
+                    if (_isWifiMode) {
+                      _wifiService.sendText(val);
+                    } else {
+                      _adbService.sendText(val);
+                    }
                     _textController.clear();
                     Navigator.pop(context);
                   },
@@ -222,7 +243,11 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: () {
-                        _adbService.sendText(_textController.text);
+                        if (_isWifiMode) {
+                          _wifiService.sendText(_textController.text);
+                        } else {
+                          _adbService.sendText(_textController.text);
+                        }
                         _textController.clear();
                         Navigator.pop(context);
                       },
@@ -290,16 +315,119 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         Icon(
-          _adbService.isConnected ? Icons.connected_tv_rounded : Icons.tv_off_rounded,
-          color: _adbService.isConnected ? AppTheme.accentColor : Colors.white24,
+          (_isWifiMode ? _wifiService.isConnected : _adbService.isConnected) 
+              ? Icons.connected_tv_rounded 
+              : Icons.tv_off_rounded,
+          color: (_isWifiMode ? _wifiService.isConnected : _adbService.isConnected) 
+              ? AppTheme.accentColor 
+              : Colors.white24,
           size: 32,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
+        IconButton(
+          icon: Icon(
+            _isWifiMode ? Icons.wifi_rounded : Icons.developer_mode_rounded,
+            color: _isWifiMode ? Colors.blue : Colors.orange,
+            size: 24,
+          ),
+          onPressed: () {
+            setState(() {
+              _isWifiMode = !_isWifiMode;
+              if (_isWifiMode) {
+                _adbService.disconnect();
+              } else {
+                _wifiService.disconnect();
+              }
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Switched to ${_isWifiMode ? "WiFi" : "ADB"} Mode')),
+            );
+          },
+          tooltip: 'Switch to ${_isWifiMode ? "ADB" : "WiFi"} Mode',
+        ),
         IconButton(
           icon: const Icon(Icons.keyboard_outlined, color: Colors.white70),
           onPressed: _showKeyboardDialog,
         ),
       ],
+    );
+  }
+
+  void _showPairingDialog(String ip) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassCard(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.settings_remote_rounded, color: Colors.blue, size: 48),
+                const SizedBox(height: 16),
+                const Text('Pairing Required', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('Enter the 6-digit PIN shown on your TV ($ip)', 
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: _pinController,
+                  autofocus: true,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 6,
+                  style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8),
+                  decoration: const InputDecoration(
+                    counterText: '',
+                    fillColor: Colors.white10,
+                    filled: true,
+                    border: OutlineInputBorder(),
+                    hintText: '000000',
+                    hintStyle: TextStyle(color: Colors.white24),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final pin = _pinController.text;
+                          if (pin.length == 6) {
+                            Navigator.pop(context);
+                            setState(() => _isConnecting = true);
+                            final success = await _wifiService.pair(ip, pin);
+                            setState(() => _isConnecting = false);
+                            if (success) {
+                              _handleConnect(ip);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Pairing failed. Try again.')),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Pair'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -355,7 +483,13 @@ class _HomePageState extends State<HomePage> {
               _buildDPadButton(Alignment.centerRight, Icons.keyboard_arrow_right, ADBService.KEYCODE_RIGHT),
               Center(
                 child: GestureDetector(
-                  onTap: () => _adbService.sendKeyEvent(ADBService.KEYCODE_ENTER),
+                  onTap: () {
+                    if (_isWifiMode) {
+                      _wifiService.sendKeyEvent(ADBService.KEYCODE_ENTER);
+                    } else {
+                      _adbService.sendKeyEvent(ADBService.KEYCODE_ENTER);
+                    }
+                  },
                   child: Container(
                     width: 70,
                     height: 70,
@@ -381,7 +515,13 @@ class _HomePageState extends State<HomePage> {
       child: IconButton(
         iconSize: 40,
         icon: Icon(icon, color: Colors.white70),
-        onPressed: () => _adbService.sendKeyEvent(keyCode),
+        onPressed: () {
+          if (_isWifiMode) {
+            _wifiService.sendKeyEvent(keyCode);
+          } else {
+            _adbService.sendKeyEvent(keyCode);
+          }
+        },
       ),
     );
   }
@@ -411,9 +551,27 @@ class _HomePageState extends State<HomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(icon: const Icon(Icons.volume_down_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_DOWN)),
-                IconButton(icon: const Icon(Icons.volume_off_rounded, size: 20, color: Colors.white24), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_MUTE)),
-                IconButton(icon: const Icon(Icons.volume_up_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_UP)),
+                IconButton(icon: const Icon(Icons.volume_down_rounded), onPressed: () {
+                  if (_isWifiMode) {
+                    _wifiService.sendKeyEvent(ADBService.KEYCODE_VOLUME_DOWN);
+                  } else {
+                    _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_DOWN);
+                  }
+                }),
+                IconButton(icon: const Icon(Icons.volume_off_rounded, size: 20, color: Colors.white24), onPressed: () {
+                  if (_isWifiMode) {
+                    _wifiService.sendKeyEvent(ADBService.KEYCODE_MUTE);
+                  } else {
+                    _adbService.sendKeyEvent(ADBService.KEYCODE_MUTE);
+                  }
+                }),
+                IconButton(icon: const Icon(Icons.volume_up_rounded), onPressed: () {
+                  if (_isWifiMode) {
+                    _wifiService.sendKeyEvent(ADBService.KEYCODE_VOLUME_UP);
+                  } else {
+                    _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_UP);
+                  }
+                }),
               ],
             ),
           ),
@@ -435,9 +593,21 @@ class _HomePageState extends State<HomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(icon: const Icon(Icons.keyboard_arrow_down_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_DOWN)),
+                IconButton(icon: const Icon(Icons.keyboard_arrow_down_rounded), onPressed: () {
+                  if (_isWifiMode) {
+                    _wifiService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_DOWN);
+                  } else {
+                    _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_DOWN);
+                  }
+                }),
                 const Icon(Icons.swap_vert_rounded, size: 20, color: Colors.white24),
-                IconButton(icon: const Icon(Icons.keyboard_arrow_up_rounded), onPressed: () => _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_UP)),
+                IconButton(icon: const Icon(Icons.keyboard_arrow_up_rounded), onPressed: () {
+                  if (_isWifiMode) {
+                    _wifiService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_UP);
+                  } else {
+                    _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_UP);
+                  }
+                }),
               ],
             ),
           ),
@@ -476,7 +646,11 @@ class _HomePageState extends State<HomePage> {
                   setState(() => _brightness = val);
                 },
                 onChangeEnd: (val) {
-                  _adbService.setBrightness(val.toInt());
+                  if (_isWifiMode) {
+                    _wifiService.setBrightness(val.toInt());
+                  } else {
+                    _adbService.setBrightness(val.toInt());
+                  }
                 },
               ),
             ),
@@ -490,7 +664,13 @@ class _HomePageState extends State<HomePage> {
     return Column(
       children: [
         GestureDetector(
-          onTap: () => _adbService.sendKeyEvent(keyCode),
+          onTap: () {
+            if (_isWifiMode) {
+              _wifiService.sendKeyEvent(keyCode);
+            } else {
+              _adbService.sendKeyEvent(keyCode);
+            }
+          },
           child: Container(
             width: 60,
             height: 60,

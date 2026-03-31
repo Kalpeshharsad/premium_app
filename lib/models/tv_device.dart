@@ -4,22 +4,30 @@ class TvDevice {
   final String ipAddress;
   final String name;
   final DateTime? lastConnected;
+  final bool isAdbCapable;
+  final bool isWifiCapable;
 
   TvDevice({
     required this.ipAddress,
     required this.name,
     this.lastConnected,
+    this.isAdbCapable = true,
+    this.isWifiCapable = false,
   });
 
   TvDevice copyWith({
     String? ipAddress,
     String? name,
     DateTime? lastConnected,
+    bool? isAdbCapable,
+    bool? isWifiCapable,
   }) {
     return TvDevice(
       ipAddress: ipAddress ?? this.ipAddress,
       name: name ?? this.name,
       lastConnected: lastConnected ?? this.lastConnected,
+      isAdbCapable: isAdbCapable ?? this.isAdbCapable,
+      isWifiCapable: isWifiCapable ?? this.isWifiCapable,
     );
   }
 
@@ -28,6 +36,8 @@ class TvDevice {
       'ipAddress': ipAddress,
       'name': name,
       'lastConnected': lastConnected?.millisecondsSinceEpoch,
+      'isAdbCapable': isAdbCapable,
+      'isWifiCapable': isWifiCapable,
     };
   }
 
@@ -38,6 +48,8 @@ class TvDevice {
       lastConnected: map['lastConnected'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['lastConnected'])
           : null,
+      isAdbCapable: map['isAdbCapable'] ?? true,
+      isWifiCapable: map['isWifiCapable'] ?? false,
     );
   }
 

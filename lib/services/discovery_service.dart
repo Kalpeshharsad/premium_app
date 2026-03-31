@@ -17,12 +17,18 @@ class DiscoveryService {
     _client = MDnsClient();
     await _client?.start();
 
-    // Scan for ADB service (common on Android TVs)
-    const String name = '_adb._tcp.local';
+    // Scan for ADB service and Android TV Remote service
+    const String adbServiceName = '_adb._tcp.local';
+    const String wifiServiceName = '_androidtvremote2._tcp.local';
     
+    _discoverByServiceName(adbServiceName, isAdb: true);
+    _discoverByServiceName(wifiServiceName, isWifi: true);
+  }
+
+  void _discoverByServiceName(String serviceName, {bool isAdb = false, bool isWifi = false}) async {
     try {
       await for (final PtrResourceRecord ptr in _client!.lookup<PtrResourceRecord>(
-          ResourceRecordQuery.serverPointer(name))) {
+          ResourceRecordQuery.serverPointer(serviceName))) {
         
         await for (final SrvResourceRecord srv in _client!.lookup<SrvResourceRecord>(
             ResourceRecordQuery.service(ptr.domainName))) {
@@ -30,26 +36,39 @@ class DiscoveryService {
           await for (final IPAddressResourceRecord ip in _client!.lookup<IPAddressResourceRecord>(
               ResourceRecordQuery.addressIPv4(srv.target))) {
             
-            // Try to extract a friendly name from the PTR domain name
-            String deviceName = ptr.domainName.replaceAll('._adb._tcp.local', '');
+            String deviceName = ptr.domainName
+                .replaceAll('.$serviceName', '')
+                .replaceAll('._tcp.local', '');
+            
             if (deviceName.isEmpty) {
                deviceName = 'Android TV';
             }
 
-            final device = TvDevice(
-              ipAddress: ip.address.address,
-              name: deviceName,
-            );
-
-            if (!_discoveredDevices.any((d) => d.ipAddress == device.ipAddress)) {
-              _discoveredDevices.add(device);
-              _devicesController.add(_discoveredDevices);
+            final ipStr = ip.address.address;
+            
+            // Check if we already have this IP
+            final existingIndex = _discoveredDevices.indexWhere((d) => d.ipAddress == ipStr);
+            
+            if (existingIndex != -1) {
+              final existing = _discoveredDevices[existingIndex];
+              _discoveredDevices[existingIndex] = existing.copyWith(
+                isAdbCapable: existing.isAdbCapable || isAdb,
+                isWifiCapable: existing.isWifiCapable || isWifi,
+              );
+            } else {
+              _discoveredDevices.add(TvDevice(
+                ipAddress: ipStr,
+                name: deviceName,
+                isAdbCapable: isAdb,
+                isWifiCapable: isWifi,
+              ));
             }
+            _devicesController.add(_discoveredDevices);
           }
         }
       }
     } catch (e) {
-      debugPrint('mDNS Discovery Error: $e');
+      debugPrint('mDNS Discovery Error ($serviceName): $e');
     }
   }
 
