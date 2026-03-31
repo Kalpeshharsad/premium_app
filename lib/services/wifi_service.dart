@@ -25,18 +25,29 @@ class WifiService {
     }
 
     try {
-      // Connect to Control Port 6467
-      _controlSocket = await SecureSocket.connect(
-        ip, 
-        6467, 
-        onBadCertificate: (cert) => true,
-        timeout: const Duration(seconds: 5),
-      );
+      // Connect to Control Port (Trying 8601 first as suggested, then fallback to 6467)
+      try {
+        _controlSocket = await SecureSocket.connect(
+          ip, 
+          8601, 
+          onBadCertificate: (cert) => true,
+          timeout: const Duration(seconds: 3),
+        );
+        debugPrint('WifiService: Connected to port 8601 (Control)');
+      } catch (e) {
+        debugPrint('WifiService: Port 8601 failed, trying 6467...');
+        _controlSocket = await SecureSocket.connect(
+          ip, 
+          6467, 
+          onBadCertificate: (cert) => true,
+          timeout: const Duration(seconds: 3),
+        );
+        debugPrint('WifiService: Connected to port 6467 (Control)');
+      }
       
       _isConnected = true;
       _pairedIp = ip;
       
-      // Listen for incoming messages (like state updates)
       _controlSocket!.listen((data) {
         debugPrint('WifiService: Received control data of length ${data.length}');
       }, onDone: () => disconnect(), onError: (e) => disconnect());
@@ -50,17 +61,30 @@ class WifiService {
   }
 
   Future<void> startPairing(String ip) async {
-    debugPrint('WifiService: Starting pairing with $ip on port 6466...');
+    debugPrint('WifiService: Starting pairing with $ip...');
     try {
-      _pairingSocket = await SecureSocket.connect(
-        ip, 
-        6466, 
-        onBadCertificate: (cert) => true,
-        timeout: const Duration(seconds: 5),
-      );
+      // Try Port 8601 for Pairing first, then fallback to 6466
+      try {
+        debugPrint('WifiService: Trying port 8601 for pairing...');
+        _pairingSocket = await SecureSocket.connect(
+          ip, 
+          8601, 
+          onBadCertificate: (cert) => true,
+          timeout: const Duration(seconds: 3),
+        );
+        debugPrint('WifiService: Connected to port 8601 (Pairing)');
+      } catch (e) {
+        debugPrint('WifiService: Port 8601 failed, trying 6466...');
+        _pairingSocket = await SecureSocket.connect(
+          ip, 
+          6466, 
+          onBadCertificate: (cert) => true,
+          timeout: const Duration(seconds: 3),
+        );
+        debugPrint('WifiService: Connected to port 6466 (Pairing)');
+      }
 
       // Sending PairingRequest (Protobuf)
-      // This is the sequence for: service_name: "Antigravity Remote", device_name: "Mobile"
       final pairingRequest = Uint8List.fromList([
         0x00, 0x12, 0x0a, 0x10, 0x41, 0x6e, 0x74, 0x69, 0x67, 0x72, 0x61, 0x76,
         0x69, 0x74, 0x79, 0x20, 0x52, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x12, 0x06,

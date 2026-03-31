@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _pinController = TextEditingController();
   
   bool _isConnecting = false;
-  bool _isWifiMode = false;
+  bool _isWifiMode = true; // Default to WiFi mode
   double _brightness = 127;
   
   List<TvDevice> _savedDevices = [];
@@ -34,18 +34,25 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadSavedDevices();
+    _loadInitialData(); // New combined method for loading and auto-connecting
     _discoveryService.devicesStream.listen((devices) {
       if (mounted) {
         setState(() => _discoveredDevices = devices);
       }
     });
     _discoveryService.startDiscovery();
-    
-    // Auto-connect on startup
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleConnect();
-    });
+  }
+
+  Future<void> _loadInitialData() async {
+    await _loadSavedDevices();
+    if (_savedDevices.isNotEmpty) {
+      // Auto-connect to the most recent device after a short delay to ensure UI is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && !_adbService.isConnected && !_wifiService.isConnected) {
+          _handleConnect(_savedDevices.first.ipAddress);
+        }
+      });
+    }
   }
 
   @override
