@@ -126,7 +126,7 @@ Uint8List _remoteConfigure() {
   ]);
   return _frame(Uint8List.fromList([
     ..._fb(1, Uint8List.fromList([
-      ..._fv(1, 611), // Features: PING|KEY|POWER|VOLUME|APP_LINK
+      ..._fv(1, 635), // Features: PING|KEY|VOICE|UNKNOWN_1|POWER|VOLUME|APP_LINK
       ..._fb(2, deviceInfo),
     ])),
   ]));
@@ -229,7 +229,7 @@ class WifiService {
           _controlSocket?.add(_remoteConfigure());
           _controlSocket?.flush();
         } else if (_hasField(msg, 2)) { // remote_set_active
-          _controlSocket?.add(_remoteSetActive(611));
+          _controlSocket?.add(_remoteSetActive(635));
           _controlSocket?.flush();
         } else if (_hasField(msg, 8)) { // remote_ping_request
           _controlSocket?.add(_remotePingResponse(0));
@@ -346,9 +346,10 @@ class WifiService {
   Future<void> sendKeyEvent(int keyCode) async {
     if (!_isConnected || _controlSocket == null) return;
     
-    // Convert ADB ENTER (66) to DPAD_CENTER (23) for better WiFi compat
+    // Map keycodes for better Google TV WiFi compatibility
     int finalCode = keyCode;
-    if (keyCode == 66) finalCode = 23;
+    if (keyCode == 66) finalCode = 23;  // ENTER -> DPAD_CENTER
+    if (keyCode == 82) finalCode = 256; // MENU -> TV_CONTENTS_MENU
     
     // Direction 3 = SHORT press
     _controlSocket!.add(_remoteKeyInject(finalCode, 3));
