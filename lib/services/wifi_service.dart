@@ -227,6 +227,12 @@ class WifiService {
       controlReader.stream.listen((msg) {
         debugPrint('WifiService: Recv Control Msg: ${msg.map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
         if (_hasField(msg, 1)) { // remote_configure
+          // Re-parse to show manufacturer (crude parse)
+          try {
+             final hex = msg.map((b) => b.toRadixString(16).padLeft(2, "0")).join("");
+             debugPrint('WifiService: Handshake Packet HEX: $hex');
+          } catch (_) {}
+          
           debugPrint('WifiService: Responding to Configure');
           _controlSocket?.add(_remoteConfigure());
           _controlSocket?.flush();
@@ -359,16 +365,24 @@ class WifiService {
     int finalCode = keyCode;
     if (keyCode == 66) finalCode = 23;  // ENTER -> DPAD_CENTER
     
-    // Many TCL/Google TVs use SETTINGS (176) instead of MENU (82)
+    // Try alternate codes for TCL Menu
     if (keyCode == 82) {
-       debugPrint('WifiService: Sending MENU as SETTINGS (176)');
-       finalCode = 176; 
+       debugPrint('WifiService: Trying alternate Menu (TV_INPUT 178)');
+       finalCode = 178; 
     }
     
     debugPrint('WifiService: Sending KeyCode $finalCode (original: $keyCode)');
     
-    // Direction 3 = SHORT press
-    _controlSocket!.add(_remoteKeyInject(finalCode, 3));
+    if (finalCode == 166 || finalCode == 167) {
+      // For Channels, many TVs prefer explicit DOWN then UP
+      debugPrint('WifiService: Sending Channel using DOWN+UP sequence');
+      _controlSocket!.add(_remoteKeyInject(finalCode, 0)); // DOWN
+      await Future.delayed(const Duration(milliseconds: 100));
+      _controlSocket!.add(_remoteKeyInject(finalCode, 1)); // UP
+    } else {
+      // Direction 3 = SHORT press
+      _controlSocket!.add(_remoteKeyInject(finalCode, 3));
+    }
     await _controlSocket!.flush();
   }
 
