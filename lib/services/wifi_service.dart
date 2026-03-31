@@ -6,121 +6,151 @@ import 'package:flutter/foundation.dart';
 import 'key_service.dart';
 
 // ─────────────────────────────────────────────
-// Protobuf helpers (no full protobuf dependency)
+// Pre-generated client certificate (RSA 2048)
+// Generated with: openssl req -x509 -newkey rsa:2048 -days 7300 -nodes
+// The TV uses this to identify the remote app.
 // ─────────────────────────────────────────────
 
-Uint8List _varint(int value) {
+const _kClientKey = '''-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCjHtK7EBd767jR
+XXy6UoZYixyXRdCVC9Y9N73QrrAFxbsHsoO0tlI5pMfUdz4PXSk5hFo8i0c9W5n0
+4mafWhzHcWB4+mLHGpn9HgseDr+Zq3bjNHEI10UNu7O28YEh4aa9DKCmAR/MFSKY
+oPJfPltEkA49JcLHjlmyX5pbV1N9Z/6/WCMxSFlce9EIHDYFxyUzYmrqyQwNyDfK
+k221MutQ0yhrNXEzSlmKFA9mkOVgB4fbnyu6nh5Y36tmswoqTzfvo0yayje6NUdM
+G0OTJ+ybwNl43FvyF0T26EvcFvytX3SjPP/ZMyL7N4PQlZIyHPhZIYj+fFry0W58
+mprQP96bAgMBAAECggEAUD77G1R8wRVDHBg6Im0zsz5oZ9DMHm6uy/nukslFRemy
+q0Q6P74LsFjsh4zLxoIlpCqEu9Em0DwOfqacJpuNmd4gQBOpYVqoU5mijXxi7KWp
+/HcRfnBsg6eJ7x9a0ACy5sDeDRxzeJITLXPMGGfUPWQC5Tj82/AfFz2p8XKB26hx
+xzUFhzmaQxM2F5bFYpcpEFTMgvlTXkisBZoeP+N2It999wI4rP/mQPyLUIQeXu7t
+nl2oBGSS8Ls+qFU+0wYA6eb1sjep27RHrUd5aMA+eukos153XINoAvFIDhVKdjfw
+QougFvP0FpJ6/yexxfZo2RSYbn9dtY12QzVcNtR5DQKBgQDixZ3dCNbwRR5ipAy7
+zFfybDIEYCfqF+NGo1vuT7qKkEIwEwEGzrW7rtKI0GotvhDf4ygaMrj9AP5Ht4PB
+3eStB8O6x26zQ9nJ2aLHqzNooZJRkvqxuThDVr0PjbKfjs6AVHvu2X4W0tNLLZNw
+gSZtVjmzto38amcHEK+H5F9sLwKBgQC4JQMNnfBcSkE0vN26QJOKPKGqorSt1BWG
+wzkicF7gnNJoV8I0WWt4ybiq+wODyTG7UqEX9ESP9iM2KnFvm+FdttKuhD3ApaYb
+L2fMxcNMsQjONJGb16bSB1G+ACU1xF91X64MWme8d+7h726zQYj41ogTorbmhwZU
+YBYRQaJ9VQKBgQCW5l1n6ivs8nGHvhZjGVUkke6ujrXAxmiMZsQTzqYY8mm4x8yV
+FRRFcc3TEKy3B5T/Bo927229nd2XJ3zbkqZKpbIPJgp565qPAO2a5EdvRqSw95cu
+kEvqM1vXb7j/B+5N4uodREjtMxk7G3bTFH3Xn9sBxWayIrOwNeA4EzWULQKBgQCs
+DSDiKyx1/ocYMFL2//kaUvY2SVmJhLwsMuGCNP3g3YWWKlDwuo+4xrk9P9UT3/sQ
+a+7KQ9d/rtlNdbCROFMETZphpntQMTWW9t8EK88DK/HvQJy/wGlEmcQdQ2OA7h7G
+uwQS1LFSHbjb7us+nz/MSB3SQtijYYtfcHuN2gZpFQKBgBROVNgQjoTjSq9Dinz1
+4Jj6t6xzhOub0yYJoUg30ng5FubAJK6YXO+gx3v0Ol5D4HWEHVY/2CdTINsGm8/R
++R5dnrqiaaIMxPABxHrRBRPsX6qvYRXhfySNlP+7DpkqsK9OH3LV5vEeTufZPmJE
+ETtKeUWhtzCb1v6A5jyeiayS
+-----END PRIVATE KEY-----''';
+
+const _kClientCert = '''-----BEGIN CERTIFICATE-----
+MIIDGzCCAgOgAwIBAgIUNkaholgpK8J9vtb8Rw7cQpTmwC4wDQYJKoZIhvcNAQEL
+BQAwHTEbMBkGA1UEAwwSQW50aWdyYXZpdHkgUmVtb3RlMB4XDTI2MDMzMTIwNDU0
+OFoXDTQ2MDMyNjIwNDU0OFowHTEbMBkGA1UEAwwSQW50aWdyYXZpdHkgUmVtb3Rl
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAox7SuxAXe+u40V18ulKG
+WIscl0XQlQvWPTe90K6wBcW7B7KDtLZSOaTH1Hc+D10pOYRaPItHPVuZ9OJmn1oc
+x3FgePpixxqZ/R4LHg6/mat24zRxCNdFDbuztvGBIeGmvQygpgEfzBUimKDyXz5b
+RJAOPSXCx45Zsl+aW1dTfWf+v1gjMUhZXHvRCBw2BcclM2Jq6skMDcg3ypNttTLr
+UNMoazVxM0pZihQPZpDlYAeH258rup4eWN+rZrMKKk8376NMmso3ujVHTBtDkyfs
+m8DZeNxb8hdE9uhL3Bb8rV90ozz/2TMi+zeD0JWSMhz4WSGI/nxa8tFufJqa0D/e
+mwIDAQABo1MwUTAdBgNVHQ4EFgQUKmy99mLsSKuwRIRxo2czfp5R5NQwHwYDVR0j
+BBgwFoAUKmy99mLsSKuwRIRxo2czfp5R5NQwDwYDVR0TAQH/BAUwAwEB/zANBgkq
+hkiG9w0BAQsFAAOCAQEAWNDTx1OEqmfBQQpAMB0yTmgRI6+TQxmbJJEPjUd/Q9rf
+wHk2Mk/GIHns0+23dmQnyoL8pggukxsZsFVSkRNKShEkWLvDwUI3ZUZOxuh/flDB
+P8NRfw6SaG6Tw2Fp1PCMyhgA2aA2vb6XNwzlT7jcMgnevytrLWaJzO+zXz2UQ7bY
+zc/93hR60fP1b7/iHbVlzMo3f4ARibywBn9E3Qg/e7U3173lSDsuTNAQ1tt3b7s/
+HvHyzBohmWvHZvtx6kEa8SP++xOxu7Z2EFdom+gwaXn2NZHGdzL28wbn9N7HD5lP
+yHf5+yjm+LbZYYk2XnCQEb2yRFXzSA8J2u98hyJiKQ==
+-----END CERTIFICATE-----''';
+
+// ─────────────────────────────────────────────
+// Protobuf helpers
+// ─────────────────────────────────────────────
+
+Uint8List _varint(int v) {
   final out = <int>[];
-  while (value > 0x7F) {
-    out.add((value & 0x7F) | 0x80);
-    value >>= 7;
-  }
-  out.add(value);
+  while (v > 0x7F) { out.add((v & 0x7F) | 0x80); v >>= 7; }
+  out.add(v);
   return Uint8List.fromList(out);
 }
 
-Uint8List _fieldVarint(int field, int value) =>
-    Uint8List.fromList([..._varint(field << 3), ..._varint(value)]);
+Uint8List _fv(int f, int v) => Uint8List.fromList([..._varint(f << 3), ..._varint(v)]);
+Uint8List _fb(int f, Uint8List d) => Uint8List.fromList([..._varint((f << 3) | 2), ..._varint(d.length), ...d]);
+Uint8List _fs(int f, String s) => _fb(f, Uint8List.fromList(utf8.encode(s)));
 
-Uint8List _fieldBytes(int field, Uint8List data) =>
-    Uint8List.fromList([..._varint((field << 3) | 2), ..._varint(data.length), ...data]);
-
-Uint8List _fieldString(int field, String s) => _fieldBytes(field, Uint8List.fromList(utf8.encode(s)));
-
-// Wrap with 4-byte BE length header
 Uint8List _frame(Uint8List msg) {
-  final len = ByteData(4)..setUint32(0, msg.length, Endian.big);
-  return Uint8List.fromList([...len.buffer.asUint8List(), ...msg]);
+  final hdr = ByteData(4)..setUint32(0, msg.length, Endian.big);
+  return Uint8List.fromList([...hdr.buffer.asUint8List(), ...msg]);
 }
 
-// Build an OuterMessage with fields pre-encoded inside `inner`
-Uint8List _outer(Uint8List inner) {
-  final body = Uint8List.fromList([
-    ..._fieldVarint(1, 2),   // protocol_version = 2
-    ..._fieldVarint(2, 200), // status = STATUS_OK
-    ...inner,
-  ]);
-  return _frame(body);
-}
+Uint8List _outer(Uint8List payload) => _frame(Uint8List.fromList([
+  ..._fv(1, 2),   // protocol_version = 2
+  ..._fv(2, 200), // status = STATUS_OK
+  ...payload,
+]));
 
-// ─────────────────────────────────────────────
-// Message structs
-// ─────────────────────────────────────────────
+// Messages
+Uint8List _pairingRequest() => _outer(_fb(10, Uint8List.fromList([
+  ..._fs(1, 'atvremote'),
+  ..._fs(2, 'Antigravity Remote'),
+])));
 
-// PairingRequest (field 10): service_name, client_name
-Uint8List _pairingRequest() {
-  final inner = Uint8List.fromList([
-    ..._fieldString(1, 'atvremote'),
-    ..._fieldString(2, 'Antigravity Remote'),
-  ]);
-  return _outer(_fieldBytes(10, inner));
-}
-
-// Options (field 20):
-//   preferred_role = ROLE_TYPE_INPUT (1)
-//   input_encodings: HEXADECIMAL (type=3), symbol_length=6
-//   output_encodings: HEXADECIMAL (type=3), symbol_length=6
 Uint8List _options() {
-  final hexEncoding = Uint8List.fromList([
-    ..._fieldVarint(1, 3), // type = HEXADECIMAL
-    ..._fieldVarint(2, 6), // symbol_length = 6
-  ]);
-  final inner = Uint8List.fromList([
-    ..._fieldBytes(1, hexEncoding), // input_encodings
-    ..._fieldBytes(2, hexEncoding), // output_encodings
-    ..._fieldVarint(3, 1),          // preferred_role = ROLE_TYPE_INPUT
-  ]);
-  return _outer(_fieldBytes(20, inner));
+  final enc = Uint8List.fromList([..._fv(1, 3), ..._fv(2, 6)]); // HEXADECIMAL, len=6
+  return _outer(_fb(20, Uint8List.fromList([
+    ..._fb(1, enc), // input_encodings
+    ..._fb(2, enc), // output_encodings
+    ..._fv(3, 1),   // preferred_role = ROLE_TYPE_INPUT
+  ])));
 }
 
-// Configuration (field 30):
-//   encoding: HEXADECIMAL (type=3), symbol_length=6
-//   client_role = ROLE_TYPE_INPUT (1)
 Uint8List _configuration() {
-  final hexEncoding = Uint8List.fromList([
-    ..._fieldVarint(1, 3), // type = HEXADECIMAL
-    ..._fieldVarint(2, 6), // symbol_length = 6
-  ]);
-  final inner = Uint8List.fromList([
-    ..._fieldBytes(1, hexEncoding), // encoding
-    ..._fieldVarint(2, 1),          // client_role = ROLE_TYPE_INPUT
-  ]);
-  return _outer(_fieldBytes(30, inner));
+  final enc = Uint8List.fromList([..._fv(1, 3), ..._fv(2, 6)]);
+  return _outer(_fb(30, Uint8List.fromList([
+    ..._fb(1, enc), // encoding
+    ..._fv(2, 1),   // client_role = ROLE_TYPE_INPUT
+  ])));
 }
 
-// Secret (field 40): field 3 = secret bytes
-Uint8List _secret(Uint8List secretBytes) {
-  final inner = _fieldBytes(3, secretBytes);
-  return _outer(_fieldBytes(40, inner));
-}
+Uint8List _secret(Uint8List secretBytes) => _outer(_fb(40, _fb(3, secretBytes)));
 
 // ─────────────────────────────────────────────
-// Framed-message reader
+// Framed message reader
 // ─────────────────────────────────────────────
 
-class _MessageStream {
-  final _buffer = <int>[];
-  final _controller = StreamController<Uint8List>.broadcast();
+class _MsgReader {
+  final _buf = <int>[];
+  final _ctrl = StreamController<Uint8List>.broadcast();
+  Stream<Uint8List> get stream => _ctrl.stream;
 
-  Stream<Uint8List> get messages => _controller.stream;
-
-  void add(List<int> data) {
-    _buffer.addAll(data);
-    _tryEmit();
-  }
-
-  void _tryEmit() {
-    while (_buffer.length >= 4) {
-      final msgLen = ByteData.sublistView(Uint8List.fromList(_buffer.sublist(0, 4)))
-          .getUint32(0, Endian.big);
-      if (_buffer.length < 4 + msgLen) break;
-      final msg = Uint8List.fromList(_buffer.sublist(4, 4 + msgLen));
-      _buffer.removeRange(0, 4 + msgLen);
-      _controller.add(msg);
+  void feed(List<int> data) {
+    _buf.addAll(data);
+    while (_buf.length >= 4) {
+      final len = ByteData.sublistView(Uint8List.fromList(_buf.sublist(0, 4))).getUint32(0, Endian.big);
+      if (_buf.length < 4 + len) break;
+      _ctrl.add(Uint8List.fromList(_buf.sublist(4, 4 + len)));
+      _buf.removeRange(0, 4 + len);
     }
   }
 
-  void close() => _controller.close();
+  void close() => _ctrl.close();
+}
+
+// Check if a raw protobuf message contains a given field number
+bool _hasField(Uint8List msg, int field) {
+  try {
+    int i = 0;
+    while (i < msg.length) {
+      int tag = 0, s = 0;
+      while (i < msg.length) { final b = msg[i++]; tag |= (b & 0x7F) << s; if (b & 0x80 == 0) break; s += 7; }
+      if (tag >> 3 == field) return true;
+      switch (tag & 7) {
+        case 0: while (i < msg.length && msg[i++] & 0x80 != 0) {} break;
+        case 2: int l = 0, ls = 0; while (i < msg.length) { final b = msg[i++]; l |= (b & 0x7F) << ls; if (b & 0x80 == 0) break; ls += 7; } i += l; break;
+        case 5: i += 4; break;
+        case 1: i += 8; break;
+        default: return false;
+      }
+    }
+  } catch (_) {}
+  return false;
 }
 
 // ─────────────────────────────────────────────
@@ -133,36 +163,35 @@ class WifiService {
   String? _pairedIp;
   SecureSocket? _pairingSocket;
   SecureSocket? _controlSocket;
-  _MessageStream? _msgStream;
+  _MsgReader? _reader;
 
   bool get isConnected => _isConnected;
   bool get isPairing => _isPairing;
+
+  SecurityContext _makeContext() {
+    final ctx = SecurityContext(withTrustedRoots: false);
+    ctx.useCertificateChainBytes(utf8.encode(_kClientCert));
+    ctx.usePrivateKeyBytes(utf8.encode(_kClientKey));
+    return ctx;
+  }
 
   // ── Connect (post-pairing) ───────────────────────────────────────────────
 
   Future<bool> connect(String ip) async {
     debugPrint('WifiService: connect($ip)');
-
     final paired = await KeyService.isWifiPaired();
-    if (!paired) {
-      debugPrint('WifiService: Not paired yet.');
-      _isPairing = true;
-      return false;
-    }
+    if (!paired) { _isPairing = true; return false; }
 
     try {
       _controlSocket = await SecureSocket.connect(
         ip, 6466,
-        onBadCertificate: (cert) => true,
+        context: _makeContext(),
+        onBadCertificate: (c) => true,
         timeout: const Duration(seconds: 5),
       );
       _isConnected = true;
       _pairedIp = ip;
-      _controlSocket!.listen(
-        (data) => debugPrint('WifiService: control data ${data.length}b'),
-        onDone: disconnect,
-        onError: (_) => disconnect(),
-      );
+      _controlSocket!.listen((_) {}, onDone: disconnect, onError: (_) => disconnect());
       return true;
     } catch (e) {
       debugPrint('WifiService: connect failed: $e');
@@ -171,153 +200,115 @@ class WifiService {
     }
   }
 
-  // ── Pairing step 1: connect + handshake → TV shows PIN ──────────────────
+  // ── Pairing step 1: full handshake so TV shows PIN ───────────────────────
 
   Future<bool> startPairing(String ip) async {
-    debugPrint('WifiService: startPairing($ip)...');
+    debugPrint('WifiService: startPairing($ip)');
 
+    // Try port 6467 with mutual TLS
     try {
       _pairingSocket = await SecureSocket.connect(
         ip, 6467,
-        onBadCertificate: (cert) => true,
+        context: _makeContext(),
+        onBadCertificate: (c) => true,
         timeout: const Duration(seconds: 5),
       );
+      debugPrint('WifiService: connected on 6467 with client cert');
     } catch (e) {
-      debugPrint('WifiService: port 6467 failed ($e), trying 6466...');
+      debugPrint('WifiService: 6467 failed ($e), trying 6466...');
       try {
         _pairingSocket = await SecureSocket.connect(
           ip, 6466,
-          onBadCertificate: (cert) => true,
+          context: _makeContext(),
+          onBadCertificate: (c) => true,
           timeout: const Duration(seconds: 5),
         );
+        debugPrint('WifiService: connected on 6466 with client cert');
       } catch (e2) {
         debugPrint('WifiService: all ports failed: $e2');
         return false;
       }
     }
 
-    debugPrint('WifiService: socket connected, starting handshake...');
-
-    // Set up framed-message reader
-    _msgStream = _MessageStream();
+    _reader = _MsgReader();
     _pairingSocket!.listen(
-      (data) {
-        debugPrint('WifiService: raw data ${data.length}b hex=${data.take(8).map((b) => b.toRadixString(16).padLeft(2,"0")).join(" ")}');
-        _msgStream?.add(data);
-      },
+      (d) { debugPrint('WifiService: raw ${d.length}b'); _reader?.feed(d); },
       onError: (e) => debugPrint('WifiService: socket error $e'),
-      onDone: () {
-        debugPrint('WifiService: pairing socket closed');
-        _msgStream?.close();
-      },
+      onDone: () { debugPrint('WifiService: socket closed'); _reader?.close(); },
     );
 
-    // 1. Send PairingRequest
+    // Send PairingRequest
     _pairingSocket!.add(_pairingRequest());
     await _pairingSocket!.flush();
-    debugPrint('WifiService: → PairingRequest sent');
+    debugPrint('WifiService: → PairingRequest');
 
-    // 2. Wait for PairingRequestAck (field 11 present) then send Options
-    // 3. Wait for server Options (field 20) then send Configuration
-    // 4. Wait for ConfigurationAck (field 31) → TV shows PIN
+    final done = Completer<bool>();
+    int step = 0;
 
-    final handshakeDone = Completer<bool>();
+    final sub = _reader!.stream.listen((msg) {
+      final f11 = _hasField(msg, 11), f20 = _hasField(msg, 20), f31 = _hasField(msg, 31);
+      debugPrint('WifiService: ← msg step=$step f11=$f11 f20=$f20 f31=$f31');
 
-    int step = 0; // 0=awaiting ack, 1=awaiting server options, 2=awaiting config ack
-
-    final sub = _msgStream!.messages.listen((msg) {
-      debugPrint('WifiService: ← message step=$step payload=${msg.take(8).map((b)=>b.toRadixString(16).padLeft(2,"0")).join(" ")}');
-
-      // Quick field presence check: scan message for known field tags
-      // field 11 → PairingRequestAck tag = 11<<3|2 = 0x5A
-      // field 20 → Options tag = 20<<3|2 = 0xA2 0x01
-      // field 31 → ConfigurationAck tag = 31<<3|2 = 0xFA 0x01
-
-      final hasField11 = _hasField(msg, 11);
-      final hasField20 = _hasField(msg, 20);
-      final hasField31 = _hasField(msg, 31);
-
-      debugPrint('WifiService: hasField11=$hasField11 hasField20=$hasField20 hasField31=$hasField31');
-
-      if (step == 0 && hasField11) {
-        // Got PairingRequestAck → send Options
-        _pairingSocket?.add(_options());
-        _pairingSocket?.flush();
-        debugPrint('WifiService: → Options sent');
-        step = 1;
-      } else if (step == 1 && hasField20) {
-        // Got server Options → send Configuration
-        _pairingSocket?.add(_configuration());
-        _pairingSocket?.flush();
-        debugPrint('WifiService: → Configuration sent');
-        step = 2;
-      } else if (step == 2 && hasField31) {
-        // Got ConfigurationAck → TV should now show PIN
-        debugPrint('WifiService: handshake complete — TV showing PIN!');
-        if (!handshakeDone.isCompleted) handshakeDone.complete(true);
+      if (!done.isCompleted) {
+        if (step == 0 && f11) {
+          _pairingSocket?.add(_options());
+          _pairingSocket?.flush();
+          debugPrint('WifiService: → Options');
+          step = 1;
+        } else if (step == 1 && f20) {
+          _pairingSocket?.add(_configuration());
+          _pairingSocket?.flush();
+          debugPrint('WifiService: → Configuration');
+          step = 2;
+        } else if (step == 2 && f31) {
+          debugPrint('WifiService: handshake done — TV showing PIN');
+          done.complete(true);
+        }
       }
     });
 
-    final success = await handshakeDone.future.timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        debugPrint('WifiService: handshake timed out at step=$step');
-        return false;
-      },
+    final ok = await done.future.timeout(
+      const Duration(seconds: 12),
+      onTimeout: () { debugPrint('WifiService: handshake timeout at step=$step'); return false; },
     );
-
     await sub.cancel();
-    return success;
+    return ok;
   }
 
-  // ── Pairing step 2: send PIN → TV confirms ───────────────────────────────
+  // ── Pairing step 2: send PIN ─────────────────────────────────────────────
 
   Future<bool> pair(String ip, String pin) async {
     debugPrint('WifiService: pair PIN=$pin');
-
-    if (_pairingSocket == null) {
-      debugPrint('WifiService: no pairing socket');
-      return false;
-    }
+    if (_pairingSocket == null) return false;
 
     try {
-      // PIN is a 6-hex-char string; convert to 3-byte array
+      // PIN is 6 hex chars → 3 bytes
       final secretBytes = Uint8List.fromList(
-        List.generate(pin.length ~/ 2, (i) =>
-            int.parse(pin.substring(i * 2, i * 2 + 2), radix: 16)),
+        List.generate(pin.length ~/ 2, (i) => int.parse(pin.substring(i * 2, i * 2 + 2), radix: 16)),
       );
 
-      final completer = Completer<bool>();
+      _reader ??= _MsgReader();
+      final c = Completer<bool>();
 
-      _msgStream ??= _MessageStream();
-
-      final sub = _msgStream!.messages.listen((msg) {
-        debugPrint('WifiService: SecretAck? ${msg.take(8).map((b)=>b.toRadixString(16).padLeft(2,"0")).join(" ")}');
-        // field 41 = SecretAck (tag = 41<<3|2 = 0xCA 0x02)
-        final hasSecretAck = _hasField(msg, 41);
-        if (!completer.isCompleted) completer.complete(hasSecretAck);
+      final sub = _reader!.stream.listen((msg) {
+        if (!c.isCompleted) c.complete(_hasField(msg, 41)); // SecretAck
       });
 
       _pairingSocket!.add(_secret(secretBytes));
       await _pairingSocket!.flush();
-      debugPrint('WifiService: → Secret sent');
+      debugPrint('WifiService: → Secret');
 
-      final gotAck = await completer.future.timeout(
-        const Duration(seconds: 6),
-        onTimeout: () => false,
-      );
-
+      final ok = await c.future.timeout(const Duration(seconds: 6), onTimeout: () => false);
       await sub.cancel();
 
-      if (gotAck) {
+      if (ok) {
         await KeyService.setWifiPaired(true);
         _isPairing = false;
         _pairingSocket?.destroy();
         _pairingSocket = null;
-        _msgStream = null;
-        return true;
+        _reader = null;
       }
-      return false;
+      return ok;
     } catch (e) {
       debugPrint('WifiService: pair error $e');
       return false;
@@ -329,34 +320,23 @@ class WifiService {
   Future<void> sendKeyEvent(int keyCode) async {
     if (!_isConnected || _controlSocket == null) return;
     for (final dir in [0, 1]) {
-      final keyEvent = Uint8List.fromList([
-        ..._fieldVarint(2, keyCode),
-        ..._fieldVarint(4, dir),
-      ]);
-      final remoteMsg = Uint8List.fromList([
-        ..._fieldVarint(1, 2),
-        ..._fieldVarint(2, 200),
-        ..._fieldBytes(6, keyEvent),
-      ]);
-      _controlSocket!.add(_frame(remoteMsg));
+      final keyEvent = Uint8List.fromList([..._fv(2, keyCode), ..._fv(4, dir)]);
+      _controlSocket!.add(_frame(Uint8List.fromList([
+        ..._fv(1, 2), ..._fv(2, 200), ..._fb(6, keyEvent),
+      ])));
     }
     await _controlSocket!.flush();
   }
 
   Future<void> sendText(String text) async {
     if (!_isConnected || _controlSocket == null) return;
-    final inner = Uint8List.fromList([
-      ..._fieldVarint(1, 2),
-      ..._fieldVarint(2, 200),
-      ..._fieldBytes(8, _fieldString(1, text)),
-    ]);
-    _controlSocket!.add(_frame(inner));
+    _controlSocket!.add(_frame(Uint8List.fromList([
+      ..._fv(1, 2), ..._fv(2, 200), ..._fb(8, _fs(1, text)),
+    ])));
     await _controlSocket!.flush();
   }
 
-  Future<void> setBrightness(int value) async {
-    debugPrint('WifiService: setBrightness not supported via Remote v2');
-  }
+  Future<void> setBrightness(int value) async {}
 
   void disconnect() {
     _isConnected = false;
@@ -366,50 +346,7 @@ class WifiService {
     _controlSocket?.destroy();
     _pairingSocket = null;
     _controlSocket = null;
-    _msgStream?.close();
-    _msgStream = null;
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  /// Check if `msg` contains a field with the given number.
-  /// Works for wire types 0 (varint) and 2 (length-delimited).
-  bool _hasField(Uint8List msg, int fieldNumber) {
-    try {
-      int i = 0;
-      while (i < msg.length) {
-        // Read tag (varint)
-        int tag = 0, shift = 0;
-        while (i < msg.length) {
-          final b = msg[i++];
-          tag |= (b & 0x7F) << shift;
-          if (b & 0x80 == 0) break;
-          shift += 7;
-        }
-        final fn = tag >> 3;
-        final wt = tag & 7;
-        if (fn == fieldNumber) return true;
-        // Skip value based on wire type
-        switch (wt) {
-          case 0: // varint
-            while (i < msg.length && msg[i++] & 0x80 != 0) {}
-            break;
-          case 2: // length-delimited
-            int len = 0; shift = 0;
-            while (i < msg.length) {
-              final b = msg[i++];
-              len |= (b & 0x7F) << shift;
-              if (b & 0x80 == 0) break;
-              shift += 7;
-            }
-            i += len;
-            break;
-          case 5: i += 4; break; // 32-bit
-          case 1: i += 8; break; // 64-bit
-          default: return false;
-        }
-      }
-    } catch (_) {}
-    return false;
+    _reader?.close();
+    _reader = null;
   }
 }
