@@ -126,7 +126,7 @@ Uint8List _remoteConfigure() {
   ]);
   return _frame(Uint8List.fromList([
     ..._fb(1, Uint8List.fromList([
-      ..._fv(1, 635), // Features: PING|KEY|VOICE|UNKNOWN_1|POWER|VOLUME|APP_LINK
+      ..._fv(1, 639), // Features: PING|KEY|IME|VOICE|UNKNOWN_1|POWER|VOLUME|APP_LINK
       ..._fb(2, deviceInfo),
     ])),
   ]));
@@ -225,17 +225,23 @@ class WifiService {
       
       final ready = Completer<bool>();
       controlReader.stream.listen((msg) {
+        debugPrint('WifiService: Recv Control Msg: ${msg.map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
         if (_hasField(msg, 1)) { // remote_configure
+          debugPrint('WifiService: Responding to Configure');
           _controlSocket?.add(_remoteConfigure());
           _controlSocket?.flush();
         } else if (_hasField(msg, 2)) { // remote_set_active
-          _controlSocket?.add(_remoteSetActive(635));
+          debugPrint('WifiService: Responding to SetActive');
+          _controlSocket?.add(_remoteSetActive(639));
           _controlSocket?.flush();
         } else if (_hasField(msg, 8)) { // remote_ping_request
           _controlSocket?.add(_remotePingResponse(0));
           _controlSocket?.flush();
         } else if (_hasField(msg, 40)) { // remote_start
+          debugPrint('WifiService: Remote session STARTED');
           if (!ready.isCompleted) ready.complete(true);
+        } else if (_hasField(msg, 3)) { // remote_error
+          debugPrint('WifiService: TV ERROR received in control stream!');
         }
       });
 
@@ -344,12 +350,22 @@ class WifiService {
   }
 
   Future<void> sendKeyEvent(int keyCode) async {
-    if (!_isConnected || _controlSocket == null) return;
+    if (!_isConnected || _controlSocket == null) {
+      debugPrint('WifiService: Cannot send key $keyCode - Not Connected');
+      return;
+    }
     
     // Map keycodes for better Google TV WiFi compatibility
     int finalCode = keyCode;
     if (keyCode == 66) finalCode = 23;  // ENTER -> DPAD_CENTER
-    if (keyCode == 82) finalCode = 256; // MENU -> TV_CONTENTS_MENU
+    
+    // Many TCL/Google TVs use SETTINGS (176) instead of MENU (82)
+    if (keyCode == 82) {
+       debugPrint('WifiService: Sending MENU as SETTINGS (176)');
+       finalCode = 176; 
+    }
+    
+    debugPrint('WifiService: Sending KeyCode $finalCode (original: $keyCode)');
     
     // Direction 3 = SHORT press
     _controlSocket!.add(_remoteKeyInject(finalCode, 3));
