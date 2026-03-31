@@ -114,6 +114,36 @@ Uint8List _configuration() {
 Uint8List _secret(Uint8List alpha) => _outer(_fb(40, _fb(1, alpha)));
 
 // ─────────────────────────────────────────────
+// Remote Control Protocol (V2) - Port 6466
+// ─────────────────────────────────────────────
+
+Uint8List _remoteConfigure() {
+  final deviceInfo = Uint8List.fromList([
+    ..._fv(3, 1),
+    ..._fs(4, "1"),
+    ..._fs(5, "atvremote"),
+    ..._fs(6, "1.0.0"),
+  ]);
+  return _frame(Uint8List.fromList([
+    ..._fb(1, Uint8List.fromList([
+      ..._fv(1, 611), // Features: PING|KEY|POWER|VOLUME|APP_LINK
+      ..._fb(2, deviceInfo),
+    ])),
+  ]));
+}
+
+Uint8List _remoteSetActive(int active) => _frame(_fb(2, _fv(1, active)));
+Uint8List _remotePingResponse(int val1) => _frame(_fb(9, _fv(1, val1)));
+
+Uint8List _remoteKeyInject(int keyCode, int direction) {
+  final inject = Uint8List.fromList([
+    ..._fv(1, keyCode),
+    ..._fv(2, direction),
+  ]);
+  return _frame(_fb(10, inject));
+}
+
+// ─────────────────────────────────────────────
 // Framed message reader
 // ─────────────────────────────────────────────
 
@@ -189,7 +219,25 @@ class WifiService {
     try {
       _controlSocket = await SecureSocket.connect(ip, 6466, context: _makeContext(), onBadCertificate: (c) => true, timeout: const Duration(seconds: 5));
       _isConnected = true;
-      _controlSocket!.listen((_) {}, onDone: disconnect, onError: (_) => disconnect());
+      
+      final controlReader = _MsgReader();
+      _controlSocket!.listen((d) => controlReader.feed(d), onDone: disconnect, onError: (_) => disconnect());
+      
+      controlReader.stream.listen((msg) {
+        if (_hasField(msg, 1)) { // remote_configure
+          _controlSocket?.add(_remoteConfigure());
+          _controlSocket?.flush();
+        } else if (_hasField(msg, 2)) { // remote_set_active
+          _controlSocket?.add(_remoteSetActive(611));
+          _controlSocket?.flush();
+        } else if (_hasField(msg, 8)) { // remote_ping_request
+          // Echo ping (field 8 has val1 at sub-field 1)
+          // Simple fixed ping response usually works for V2
+          _controlSocket?.add(_remotePingResponse(0));
+          _controlSocket?.flush();
+        }
+      });
+
       return true;
     } catch (e) {
       lastError = 'Connect failed: $e';
@@ -296,16 +344,25 @@ class WifiService {
 
   Future<void> sendKeyEvent(int keyCode) async {
     if (!_isConnected || _controlSocket == null) return;
-    for (final dir in [0, 1]) {
-      final keyEvent = Uint8List.fromList([..._fv(2, keyCode), ..._fv(4, dir)]);
-      _controlSocket!.add(_outer(_fb(6, keyEvent)));
-    }
+    // Direction 3 = SHORT press
+    _controlSocket!.add(_remoteKeyInject(keyCode, 3));
     await _controlSocket!.flush();
   }
 
   Future<void> sendText(String text) async {
     if (!_isConnected || _controlSocket == null) return;
-    _controlSocket!.add(_outer(_fb(8, _fs(1, text))));
+    final val = text.length - 1;
+    final imeObj = Uint8List.fromList([..._fv(1, val), ..._fv(2, val), ..._fs(3, text)]);
+    final editInfo = _fb(3, Uint8List.fromList([
+      ..._fv(1, 1), // insert = 1
+      ..._fb(2, imeObj),
+    ]));
+    final batchEdit = Uint8List.fromList([
+      ..._fv(1, 0), // ime_counter
+      ..._fv(2, 0), // field_counter
+      ...editInfo,
+    ]);
+    _controlSocket!.add(_frame(_fb(21, batchEdit)));
     await _controlSocket!.flush();
   }
 
