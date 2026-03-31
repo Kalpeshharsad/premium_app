@@ -302,13 +302,38 @@ class _HomePageState extends State<HomePage> {
                   _buildMainControls(),
                   const SizedBox(height: 40),
                   _buildVolumeControls(),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 20),
                   _buildChannelControls(),
                   const SizedBox(height: 40),
                   _buildBrightnessControl(),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 100),
                 ],
               ),
+            ),
+          ),
+          // Debug Overlay
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: ValueListenableBuilder<String>(
+              valueListenable: WifiService.logNotifier,
+              builder: (context, log, _) {
+                if (log == 'WiFi Service Ready' || log.isEmpty) return const SizedBox.shrink();
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Text(
+                    log,
+                    style: const TextStyle(color: Colors.white70, fontSize: 10, fontFamily: 'monospace'),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              },
             ),
           ),
         ],

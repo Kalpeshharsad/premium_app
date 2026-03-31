@@ -195,6 +195,13 @@ bool _hasField(Uint8List msg, int field) {
 // ─────────────────────────────────────────────
 
 class WifiService {
+  static final logNotifier = ValueNotifier<String>('WiFi Service Ready');
+  
+  void _log(String msg) {
+    debugPrint('WifiService: $msg');
+    logNotifier.value = msg;
+  }
+
   bool _isConnected = false;
   bool _isPairing = false;
   String? lastError;
@@ -225,29 +232,23 @@ class WifiService {
       
       final ready = Completer<bool>();
       controlReader.stream.listen((msg) {
-        debugPrint('WifiService: Recv Control Msg: ${msg.map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
+        _log('Recv: ${msg.map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
         if (_hasField(msg, 1)) { // remote_configure
-          // Re-parse to show manufacturer (crude parse)
-          try {
-             final hex = msg.map((b) => b.toRadixString(16).padLeft(2, "0")).join("");
-             debugPrint('WifiService: Handshake Packet HEX: $hex');
-          } catch (_) {}
-          
-          debugPrint('WifiService: Responding to Configure');
+          _log('Responding to Configure');
           _controlSocket?.add(_remoteConfigure());
           _controlSocket?.flush();
         } else if (_hasField(msg, 2)) { // remote_set_active
-          debugPrint('WifiService: Responding to SetActive');
+          _log('Responding to SetActive');
           _controlSocket?.add(_remoteSetActive(639));
           _controlSocket?.flush();
         } else if (_hasField(msg, 8)) { // remote_ping_request
           _controlSocket?.add(_remotePingResponse(0));
           _controlSocket?.flush();
         } else if (_hasField(msg, 40)) { // remote_start
-          debugPrint('WifiService: Remote session STARTED');
+          _log('Remote session STARTED');
           if (!ready.isCompleted) ready.complete(true);
         } else if (_hasField(msg, 3)) { // remote_error
-          debugPrint('WifiService: TV ERROR received in control stream!');
+          _log('TV ERROR (field 3)!');
         }
       });
 
@@ -357,7 +358,7 @@ class WifiService {
 
   Future<void> sendKeyEvent(int keyCode) async {
     if (!_isConnected || _controlSocket == null) {
-      debugPrint('WifiService: Cannot send key $keyCode - Not Connected');
+      _log('Cannot send key $keyCode - Not Connected');
       return;
     }
     
@@ -367,15 +368,15 @@ class WifiService {
     
     // Try alternate codes for TCL Menu
     if (keyCode == 82) {
-       debugPrint('WifiService: Trying alternate Menu (TV_INPUT 178)');
+       _log('Trying alternate Menu (TV_INPUT 178)');
        finalCode = 178; 
     }
     
-    debugPrint('WifiService: Sending KeyCode $finalCode (original: $keyCode)');
+    _log('Sending Key $finalCode (orig:$keyCode)');
     
     if (finalCode == 166 || finalCode == 167) {
       // For Channels, many TVs prefer explicit DOWN then UP
-      debugPrint('WifiService: Sending Channel using DOWN+UP sequence');
+      _log('Sending Channel DOWN+UP sequence');
       _controlSocket!.add(_remoteKeyInject(finalCode, 0)); // DOWN
       await Future.delayed(const Duration(milliseconds: 100));
       _controlSocket!.add(_remoteKeyInject(finalCode, 1)); // UP
