@@ -82,6 +82,7 @@ class _HomePageState extends State<HomePage> {
       success = await _wifiService.connect(ipToConnect);
       if (_wifiService.isPairing) {
         setState(() => _isConnecting = false);
+        _wifiService.startPairing(ipToConnect); // Initiation the pairing display on TV
         _showPairingDialog(ipToConnect);
         return;
       }
