@@ -366,24 +366,16 @@ class WifiService {
     int finalCode = keyCode;
     if (keyCode == 66) finalCode = 23;  // ENTER -> DPAD_CENTER
     
-    // Try alternate codes for TCL Menu
+    // Try KEYCODE_TV (170) as requested/found in reference
     if (keyCode == 82) {
-       _log('Trying alternate Menu (TV_INPUT 178)');
-       finalCode = 178; 
+       _log('Trying Menu as TV (170)');
+       finalCode = 170; 
     }
     
     _log('Sending Key $finalCode (orig:$keyCode)');
     
-    if (finalCode == 166 || finalCode == 167) {
-      // For Channels, many TVs prefer explicit DOWN then UP
-      _log('Sending Channel DOWN+UP sequence');
-      _controlSocket!.add(_remoteKeyInject(finalCode, 0)); // DOWN
-      await Future.delayed(const Duration(milliseconds: 100));
-      _controlSocket!.add(_remoteKeyInject(finalCode, 1)); // UP
-    } else {
-      // Direction 3 = SHORT press
-      _controlSocket!.add(_remoteKeyInject(finalCode, 3));
-    }
+    // Always use direction 3 (SHORT) for V2 compatibility
+    _controlSocket!.add(_remoteKeyInject(finalCode, 3));
     await _controlSocket!.flush();
   }
 
