@@ -247,20 +247,17 @@ class WifiService {
       final tvExp = _extractExponent(_serverCert!.der);
       if (tvMod == null || tvExp == null) { lastError = 'Failed to extract TV key'; return false; }
 
-      // 1b. Wrap raw modulus and exponent into the 270-byte PKCS#1 RSAPublicKey ASN.1 sequence
-      // This is crucial for Google TV protocol compliance
-      final clientPubKey = _buildRSAPublicKey(_kClientMod, _kClientExp);
-      final tvPubKey = _buildRSAPublicKey(tvMod, tvExp);
+      // 2. Compute Alpha (Secret) matches AndroidTVRemote2 Python Integer Hex algorithm perfectly
+      final clientModBytes = _toHexBytes(_kClientMod);
+      final clientExpBytes = _toHexBytes(_kClientExp, prependZero: true);
+      final serverModBytes = _toHexBytes(tvMod);
+      final serverExpBytes = _toHexBytes(tvExp, prependZero: true);
 
-      // 2. Compute Alpha (Secret)
-      // SHA256(clientPubKey + tvPubKey + nonce)
-      // Nonce is the last 2 bytes of the hex code
-      // If pin is "A1B2C3", last 4 chars are "B2C3" -> [0xB2, 0xC3]
       final n1 = int.parse(pin.substring(2, 4), radix: 16);
       final n2 = int.parse(pin.substring(4, 6), radix: 16);
       final nonce = Uint8List.fromList([n1, n2]);
       
-      final payload = <int>[...clientPubKey, ...tvPubKey, ...nonce];
+      final payload = <int>[...clientModBytes, ...clientExpBytes, ...serverModBytes, ...serverExpBytes, ...nonce];
       final alpha = Uint8List.fromList(sha256.convert(payload).bytes);
 
       // --- DIAGNOSTIC: Google TV Verify Hash Checksum ---
@@ -327,38 +324,24 @@ class WifiService {
   Uint8List? _extractModulus(Uint8List der) {
     try {
       int i = 0;
-      // 1. Find the SubjectPublicKeyInfo sequence
-      // It's usually the 7th sequence in a standard TBSCertificate
-      int seqCount = 0;
-      while (i < der.length - 1 && seqCount < 7) {
-        if (der[i] == 0x30) {
-          seqCount++;
-          if (seqCount == 7) break; 
+      while (i < der.length - 64) {
+        if (der[i] == 0x02) {
+          int len = 0;
+          int start = 0;
+          if (der[i+1] == 0x81) {
+            len = der[i+2]; start = i+3;
+          } else if (der[i+1] == 0x82) {
+            len = (der[i+2] << 8) | der[i+3]; start = i+4;
+          } else if (der[i+1] < 0x80) {
+            len = der[i+1]; start = i+2;
+          }
+          if (len >= 128) {
+            if (der[start] == 0x00) { start++; len--; }
+            return der.sublist(start, start + len);
+          }
         }
         i++;
       }
-      
-      // 2. Look for the BIT STRING (0x03)
-      while (i < der.length - 1) {
-        if (der[i] == 0x03) { i += 2; break; }
-        i++;
-      }
-      
-      // 3. Skip the "unused bits" byte of the BIT STRING
-      i++; 
-      
-      // 4. Now we should be at the inner RSAPublicKey SEQUENCE (0x30)
-      if (der[i] != 0x30) return null;
-      i++; _readLen(der, i); // skip len
-      i = _nextPos(der, i); 
-      
-      // 5. First field is Modulus INTEGER (0x02)
-      if (der[i] != 0x02) return null;
-      i++; 
-      int len = _readLen(der, i);
-      int start = _nextPos(der, i);
-      if (der[start] == 0x00) { start++; len--; } // remove leading null byte
-      return der.sublist(start, start + len);
     } catch (_) {}
     return null;
   }
@@ -388,25 +371,26 @@ class WifiService {
     return Uint8List.fromList([0x01, 0x00, 0x01]);
   }
 
-  int _readLen(Uint8List d, int pos) {
-    if (d[pos] < 0x80) return d[pos];
-    int n = d[pos] & 0x7F;
-    int l = 0;
-    for (int j = 0; j < n; j++) l = (l << 8) | d[pos + 1 + j];
-    return l;
-  }
-
-  int _nextPos(Uint8List d, int pos) {
-    if (d[pos] < 0x80) return pos + 1;
-    return pos + 1 + (d[pos] & 0x7F);
-  }
-
-  // Wraps a raw 256-byte RSA modulus and a 3-byte exponent into a PKCS#1 RSAPublicKey ASN.1 sequence
-  Uint8List _buildRSAPublicKey(Uint8List mod, Uint8List exp) {
-    return Uint8List.fromList([
-      0x30, 0x82, 0x01, 0x0A, // SEQUENCE (length 266)
-      0x02, 0x82, 0x01, 0x01, 0x00, ...mod, // INTEGER (modulus with leading zero)
-      0x02, 0x03, ...exp // INTEGER (exponent)
-    ]);
+  // Exact Python mathematical integer hex-string encoding logic
+  Uint8List _toHexBytes(Uint8List data, {bool prependZero = false}) {
+    String hex = data.map((b) => b.toRadixString(16).padLeft(2, '0')).join('').toUpperCase();
+    int idx = 0;
+    while (idx < hex.length - 1 && hex[idx] == '0') {
+      idx++;
+    }
+    hex = hex.substring(idx);
+    
+    if (prependZero) {
+      hex = '0' + hex;
+    } else if (hex.length % 2 != 0) {
+      hex = '0' + hex;
+    }
+    
+    final out = Uint8List(hex.length ~/ 2);
+    for (int i = 0; i < out.length; i++) {
+      out[i] = int.parse(hex.substring(i * 2, i * 2 + 2), radix: 16);
+    }
+    return out;
   }
 }
+
