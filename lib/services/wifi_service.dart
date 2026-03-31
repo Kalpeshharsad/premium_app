@@ -247,15 +247,20 @@ class WifiService {
       final tvExp = _extractExponent(_serverCert!.der);
       if (tvMod == null || tvExp == null) { lastError = 'Failed to extract TV key'; return false; }
 
+      // 1b. Wrap raw modulus and exponent into the 270-byte PKCS#1 RSAPublicKey ASN.1 sequence
+      // This is crucial for Google TV protocol compliance
+      final clientPubKey = _buildRSAPublicKey(_kClientMod, _kClientExp);
+      final tvPubKey = _buildRSAPublicKey(tvMod, tvExp);
+
       // 2. Compute Alpha (Secret)
-      // SHA256(clientMod + clientExp + tvMod + tvExp + nonce)
+      // SHA256(clientPubKey + tvPubKey + nonce)
       // Nonce is the last 2 bytes of the hex code
       // If pin is "A1B2C3", last 4 chars are "B2C3" -> [0xB2, 0xC3]
       final n1 = int.parse(pin.substring(2, 4), radix: 16);
       final n2 = int.parse(pin.substring(4, 6), radix: 16);
       final nonce = Uint8List.fromList([n1, n2]);
       
-      final payload = <int>[..._kClientMod, ..._kClientExp, ...tvMod, ...tvExp, ...nonce];
+      final payload = <int>[...clientPubKey, ...tvPubKey, ...nonce];
       final alpha = Uint8List.fromList(sha256.convert(payload).bytes);
 
       _reader ??= _MsgReader();
@@ -385,5 +390,14 @@ class WifiService {
   int _nextPos(Uint8List d, int pos) {
     if (d[pos] < 0x80) return pos + 1;
     return pos + 1 + (d[pos] & 0x7F);
+  }
+
+  // Wraps a raw 256-byte RSA modulus and a 3-byte exponent into a PKCS#1 RSAPublicKey ASN.1 sequence
+  Uint8List _buildRSAPublicKey(Uint8List mod, Uint8List exp) {
+    return Uint8List.fromList([
+      0x30, 0x82, 0x01, 0x0A, // SEQUENCE (length 266)
+      0x02, 0x82, 0x01, 0x01, 0x00, ...mod, // INTEGER (modulus with leading zero)
+      0x02, 0x03, ...exp // INTEGER (exponent)
+    ]);
   }
 }
