@@ -11,6 +11,12 @@ class KeyService {
   static const String _privateKeyQKey = 'adb_private_key_q';
   static const String _stitchApiKey = 'stitch_api_key';
 
+  // WiFi (Google TV Remote v2) keys
+  static const String _wifiCertPemKey  = 'wifi_cert_pem';
+  static const String _wifiKeyPemKey   = 'wifi_key_pem';
+  static const String _wifiModulusKey  = 'wifi_modulus_hex';
+  static const String _wifiPairedKey   = 'wifi_is_paired';
+
   static Future<AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>?> loadKeys() async {
     debugPrint('KeyService: Loading keys...');
     final prefs = await SharedPreferences.getInstance();
@@ -68,5 +74,48 @@ class KeyService {
   static Future<void> saveStitchApiKey(String key) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_stitchApiKey, key);
+  }
+
+  // ── WiFi (Google TV Remote v2) ──────────────────────────────────────────
+
+  static Future<String?> getWifiCertPem() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_wifiCertPemKey);
+  }
+
+  static Future<void> saveWifiCertPem(String pem) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_wifiCertPemKey, pem);
+  }
+
+  static Future<String?> getWifiKeyPem() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_wifiKeyPemKey);
+  }
+
+  static Future<void> saveWifiKeyPem(String pem) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_wifiKeyPemKey, pem);
+  }
+
+  static Future<BigInt?> getWifiModulus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hex = prefs.getString(_wifiModulusKey);
+    return hex != null ? BigInt.parse(hex, radix: 16) : null;
+  }
+
+  static Future<void> saveWifiModulus(BigInt modulus) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_wifiModulusKey, modulus.toRadixString(16));
+  }
+
+  static Future<bool> isWifiPaired() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_wifiPairedKey) ?? false;
+  }
+
+  static Future<void> setWifiPaired(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_wifiPairedKey, value);
   }
 }

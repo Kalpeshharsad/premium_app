@@ -88,9 +88,16 @@ class _HomePageState extends State<HomePage> {
     if (_isWifiMode) {
       success = await _wifiService.connect(ipToConnect);
       if (_wifiService.isPairing) {
+        final pairingStarted = await _wifiService.startPairing(ipToConnect);
         setState(() => _isConnecting = false);
-        _wifiService.startPairing(ipToConnect); // Initiation the pairing display on TV
-        _showPairingDialog(ipToConnect);
+        
+        if (pairingStarted) {
+          _showPairingDialog(ipToConnect);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not reach TV. Check IP and Network.')),
+          );
+        }
         return;
       }
     } else {
@@ -385,17 +392,20 @@ class _HomePageState extends State<HomePage> {
                 TextField(
                   controller: _pinController,
                   autofocus: true,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.text,
                   textAlign: TextAlign.center,
                   maxLength: 6,
+                  textCapitalization: TextCapitalization.characters,
                   style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8),
                   decoration: const InputDecoration(
                     counterText: '',
                     fillColor: Colors.white10,
                     filled: true,
                     border: OutlineInputBorder(),
-                    hintText: '000000',
+                    hintText: 'A1B2C3',
                     hintStyle: TextStyle(color: Colors.white24),
+                    helperText: 'Enter the hex code shown on your TV',
+                    helperStyle: TextStyle(color: Colors.white54, fontSize: 12),
                   ),
                 ),
                 const SizedBox(height: 24),
