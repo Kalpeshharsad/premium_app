@@ -263,6 +263,15 @@ class WifiService {
       final payload = <int>[...clientPubKey, ...tvPubKey, ...nonce];
       final alpha = Uint8List.fromList(sha256.convert(payload).bytes);
 
+      // --- DIAGNOSTIC: Google TV Verify Hash Checksum ---
+      final expectedPrefix = int.parse(pin.substring(0, 2), radix: 16);
+      if (alpha[0] != expectedPrefix) {
+        lastError = 'Hash mismatch! Expected ${expectedPrefix.toRadixString(16).padLeft(2, '0').toUpperCase()}, got ${alpha[0].toRadixString(16).padLeft(2, '0').toUpperCase()}. Mod(C: ${_kClientMod.length}, T: ${tvMod.length}) Exp(C: ${_kClientExp.length}, T: ${tvExp.length})';
+        return false;
+      }
+      // -------------------------------------------------
+
+
       _reader ??= _MsgReader();
       final c = Completer<bool>();
       final sub = _reader!.stream.listen((msg) { 
