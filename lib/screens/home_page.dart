@@ -431,7 +431,10 @@ class _HomePageState extends State<HomePage> {
                               _handleConnect(ip);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Pairing failed. Try again.')),
+                                SnackBar(
+                                  content: Text(_wifiService.lastError ?? 'Pairing failed. Try again.'),
+                                  duration: const Duration(seconds: 10), // Give them time to copy it
+                                ),
                               );
                             }
                           }
