@@ -88,7 +88,7 @@ Uint8List _outer(Uint8List payload) => _frame(Uint8List.fromList([
   ...payload,
 ]));
 
-// Message builders
+// Messages
 Uint8List _pairingRequest() => _outer(_fb(10, Uint8List.fromList([
   ..._fs(1, 'atvremote'),
   ..._fs(2, 'Antigravity Remote'),
@@ -111,7 +111,7 @@ Uint8List _configuration() {
   ])));
 }
 
-Uint8List _secret(Uint8List alpha) => _outer(_fb(12, _fb(3, alpha)));
+Uint8List _secret(Uint8List alpha) => _outer(_fb(40, _fb(1, alpha)));
 
 // ─────────────────────────────────────────────
 // Framed message reader
@@ -249,15 +249,20 @@ class WifiService {
 
       // 2. Compute Alpha (Secret)
       // SHA256(clientMod + clientExp + tvMod + tvExp + nonce)
-      // Nonce is last 2 bytes of the hex code
-      final nonce = Uint8List.fromList(List.generate(2, (i) => int.parse(pin.substring((i+1)*2, (i+1)*2+2), radix: 16)));
+      // Nonce is the last 2 bytes of the hex code
+      // If pin is "A1B2C3", last 4 chars are "B2C3" -> [0xB2, 0xC3]
+      final n1 = int.parse(pin.substring(2, 4), radix: 16);
+      final n2 = int.parse(pin.substring(4, 6), radix: 16);
+      final nonce = Uint8List.fromList([n1, n2]);
       
       final payload = <int>[..._kClientMod, ..._kClientExp, ...tvMod, ...tvExp, ...nonce];
       final alpha = Uint8List.fromList(sha256.convert(payload).bytes);
 
       _reader ??= _MsgReader();
       final c = Completer<bool>();
-      final sub = _reader!.stream.listen((msg) { if (!c.isCompleted) c.complete(_hasField(msg, 41)); });
+      final sub = _reader!.stream.listen((msg) { 
+        if (!c.isCompleted && _hasField(msg, 41)) c.complete(true); // Field 41 is SecretAck
+      });
 
       _pairingSocket!.add(_secret(alpha));
       await _pairingSocket!.flush();
