@@ -160,7 +160,6 @@ bool _hasField(Uint8List msg, int field) {
 class WifiService {
   bool _isConnected = false;
   bool _isPairing = false;
-  String? _pairedIp;
   String? lastError;
   SecureSocket? _pairingSocket;
   SecureSocket? _controlSocket;
@@ -197,7 +196,6 @@ class WifiService {
         timeout: const Duration(seconds: 5),
       );
       _isConnected = true;
-      _pairedIp = ip;
       _controlSocket!.listen((_) {}, onDone: disconnect, onError: (_) => disconnect());
       return true;
     } catch (e) {
@@ -364,7 +362,6 @@ class WifiService {
   void disconnect() {
     _isConnected = false;
     _isPairing = false;
-    _pairedIp = null;
     _pairingSocket?.destroy();
     _controlSocket?.destroy();
     _pairingSocket = null;

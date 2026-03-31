@@ -66,6 +66,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app needs access to your local network to discover and connect to your Google TV.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_adb._tcp.</string>
+		<string>_androidtvremote2._tcp.</string>
+		<string>_androidtvremote._tcp.</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
