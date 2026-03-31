@@ -4,7 +4,9 @@ Antigravity is a state-of-the-art, premium Google TV remote application for iOS,
 
 ## ✨ Features
 
-- 🌐 **Auto-Discovery**: Automatically finds Google TV devices on your local network.
+- 🌐 **Auto-Discovery**: Automatically finds Google TV devices (ADB & WiFi) on your local network.
+- ⚡ **Dual Connection Modes**: Toggle between **ADB** and **WiFi** modes depending on your preference.
+- 🔗 **Easy Pairing**: Connect via WiFi without needing ADB enabled (uses the standard Google TV pairing protocol).
 - 📱 **Full D-Pad Control**: Navigate menus with a high-fidelity touch interface.
 - 🔊 **Volume & Channel Management**: Precise sliders and buttons for volume and channel switching.
 - 🔆 **Brightness Control**: Adjust your TV's brightness directly from the app.
