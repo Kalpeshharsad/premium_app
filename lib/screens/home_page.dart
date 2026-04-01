@@ -769,8 +769,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             _buildActionBtn('M5 (IME-M)', () => _wifiService.sendImeKey(82)),
             _buildActionBtn('M6 (Launch-S)', () => _wifiService.sendAppLaunch('https://www.google.com/search?q=settings')),
-            _buildActionBtn('C1 (166-S)', () => _wifiService.sendKeyEventWithDirection(166, 3)),
-            _buildActionBtn('C2 (167-S)', () => _wifiService.sendKeyEventWithDirection(167, 3)),
+            _buildActionBtn('M7 (IME-CU)', () => _wifiService.sendImeKey(166)),
+            _buildActionBtn('M8 (IME-CD)', () => _wifiService.sendImeKey(167)),
           ],
         ),
       ],
