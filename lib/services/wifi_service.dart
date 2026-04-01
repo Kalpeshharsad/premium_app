@@ -147,10 +147,6 @@ Uint8List _remoteImeKeyInject(int keyCode) {
   return _outer(_fb(20, _fv(1, keyCode)));
 }
 
-Uint8List _remoteAppLaunch(String uri) {
-  return _outer(_fb(90, _fs(1, uri)));
-}
-
 // ─────────────────────────────────────────────
 // Framed message reader
 // ─────────────────────────────────────────────
@@ -203,14 +199,10 @@ bool _hasField(Uint8List msg, int field) {
 // ─────────────────────────────────────────────
 
 class WifiService {
-  static final logNotifier = ValueNotifier<List<String>>(['WiFi Service Ready']);
+  static final logNotifier = ValueNotifier<List<String>>([]);
   
   void _log(String msg) {
     debugPrint('WifiService: $msg');
-    final logs = List<String>.from(logNotifier.value);
-    logs.add(msg);
-    if (logs.length > 5) logs.removeAt(0);
-    logNotifier.value = logs;
   }
 
   bool _isConnected = false;
@@ -388,43 +380,19 @@ class WifiService {
   }
 
   Future<void> sendKeyEvent(int keyCode) async {
-    if (!_isConnected || _controlSocket == null) {
-      _log('Cannot send key $keyCode - Not Connected');
-      return;
-    }
+    if (!_isConnected || _controlSocket == null) return;
     
     int finalCode = keyCode;
     if (keyCode == 66) finalCode = 23;  // ENTER -> DPAD_CENTER
     
     // Most TVs respond well to SHORT (3)
-    if (finalCode == 82 || finalCode == 166 || finalCode == 167) {
-      // Use 1->2 sequence for specialized buttons
-      await sendKeyEventWithDirection(finalCode, 1);
-      await Future.delayed(const Duration(milliseconds: 150));
-      await sendKeyEventWithDirection(finalCode, 2);
-    } else {
-      await sendKeyEventWithDirection(finalCode, 3);
-    }
-  }
-
-  Future<void> sendKeyEventWithDirection(int keyCode, int direction) async {
-    if (!_isConnected || _controlSocket == null) return;
-    _log('Sending Key $keyCode dir:$direction');
-    _controlSocket!.add(_remoteKeyInject(keyCode, direction));
+    _controlSocket!.add(_remoteKeyInject(finalCode, 3));
     await _controlSocket!.flush();
   }
 
   Future<void> sendImeKey(int keyCode) async {
     if (!_isConnected || _controlSocket == null) return;
-    _log('Sending IME Key $keyCode');
     _controlSocket!.add(_remoteImeKeyInject(keyCode));
-    await _controlSocket!.flush();
-  }
-
-  Future<void> sendAppLaunch(String uri) async {
-    if (!_isConnected || _controlSocket == null) return;
-    _log('Launch: $uri');
-    _controlSocket!.add(_remoteAppLaunch(uri));
     await _controlSocket!.flush();
   }
 

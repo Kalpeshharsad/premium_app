@@ -306,48 +306,9 @@ class _HomePageState extends State<HomePage> {
                   _buildChannelControls(),
                   const SizedBox(height: 40),
                   _buildBrightnessControl(),
-                  if (_isWifiMode) ...[
-                    const SizedBox(height: 40),
-                    _buildDiagnostics(),
-                  ],
                   const SizedBox(height: 100),
                 ],
               ),
-            ),
-          ),
-          // Debug Overlay
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: ValueListenableBuilder<List<String>>(
-              valueListenable: WifiService.logNotifier,
-              builder: (context, logs, _) {
-                if (logs.length <= 1 && logs.first == 'WiFi Service Ready') return const SizedBox.shrink();
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: logs.asMap().entries.map((entry) {
-                      final isLast = entry.key == logs.length - 1;
-                      return Text(
-                        entry.value,
-                        style: TextStyle(
-                          color: isLast ? Colors.white : Colors.white38,
-                          fontSize: 9,
-                          fontFamily: 'monospace',
-                        ),
-                        textAlign: TextAlign.center,
-                      );
-                    }).toList(),
-                  ),
-                );
-              },
             ),
           ),
         ],
@@ -726,7 +687,11 @@ class _HomePageState extends State<HomePage> {
         GestureDetector(
           onTap: () {
             if (_isWifiMode) {
-              _wifiService.sendKeyEvent(keyCode);
+              if (keyCode == 82 || keyCode == 166 || keyCode == 167) {
+                _wifiService.sendImeKey(keyCode);
+              } else {
+                _wifiService.sendKeyEvent(keyCode);
+              }
             } else {
               _adbService.sendKeyEvent(keyCode);
             }
@@ -745,69 +710,6 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.white60)),
       ],
-    );
-  }
-
-  Widget _buildDiagnostics() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('DIAGNOSTICS (WIFI)', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildTestBtn('M1 (82-S)', 82, 3), 
-            _buildTestBtn('M2 (176)', 176, 3), 
-            _buildTestBtn('M3 (256)', 256, 3), 
-            _buildTestBtn('M4 (178)', 178, 3), 
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildActionBtn('M5 (IME-M)', () => _wifiService.sendImeKey(82)),
-            _buildActionBtn('M6 (Launch-S)', () => _wifiService.sendAppLaunch('https://www.google.com/search?q=settings')),
-            _buildActionBtn('M7 (IME-CU)', () => _wifiService.sendImeKey(166)),
-            _buildActionBtn('M8 (IME-CD)', () => _wifiService.sendImeKey(167)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionBtn(String label, VoidCallback onPressed) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            backgroundColor: Colors.blue.withValues(alpha: 0.1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: onPressed,
-          child: Text(label, style: const TextStyle(fontSize: 8, color: Colors.blueAccent)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTestBtn(String label, int code, int dir) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            backgroundColor: Colors.white.withValues(alpha: 0.05),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: () => _wifiService.sendKeyEventWithDirection(code, dir),
-          child: Text(label, style: const TextStyle(fontSize: 8, color: Colors.white70)),
-        ),
-      ),
     );
   }
 }
