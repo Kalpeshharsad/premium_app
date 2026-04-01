@@ -757,13 +757,40 @@ class _HomePageState extends State<HomePage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildTestBtn('M1 (82-S)', 82, 3), // Standard Menu Short
-            _buildTestBtn('M2 (176)', 176, 3), // Settings
-            _buildTestBtn('M3 (256)', 256, 3), // System Menu
-            _buildTestBtn('M4 (178)', 178, 3), // Input
+            _buildTestBtn('M1 (82-S)', 82, 3), 
+            _buildTestBtn('M2 (176)', 176, 3), 
+            _buildTestBtn('M3 (256)', 256, 3), 
+            _buildTestBtn('M4 (178)', 178, 3), 
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildActionBtn('M5 (IME-M)', () => _wifiService.sendImeKey(82)),
+            _buildActionBtn('M6 (Launch-S)', () => _wifiService.sendAppLaunch('https://www.google.com/search?q=settings')),
+            _buildActionBtn('C1 (166-S)', () => _wifiService.sendKeyEventWithDirection(166, 3)),
+            _buildActionBtn('C2 (167-S)', () => _wifiService.sendKeyEventWithDirection(167, 3)),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildActionBtn(String label, VoidCallback onPressed) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            padding: EdgeInsets.zero,
+            backgroundColor: Colors.blue.withValues(alpha: 0.1),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onPressed: onPressed,
+          child: Text(label, style: const TextStyle(fontSize: 8, color: Colors.blueAccent)),
+        ),
+      ),
     );
   }
 

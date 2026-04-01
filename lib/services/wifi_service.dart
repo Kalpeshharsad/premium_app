@@ -143,6 +143,14 @@ Uint8List _remoteKeyInject(int keyCode, int direction) {
   return _outer(_fb(10, inject));
 }
 
+Uint8List _remoteImeKeyInject(int keyCode) {
+  return _outer(_fb(20, _fv(1, keyCode)));
+}
+
+Uint8List _remoteAppLaunch(String uri) {
+  return _outer(_fb(90, _fs(1, uri)));
+}
+
 // ─────────────────────────────────────────────
 // Framed message reader
 // ─────────────────────────────────────────────
@@ -403,6 +411,20 @@ class WifiService {
     if (!_isConnected || _controlSocket == null) return;
     _log('Sending Key $keyCode dir:$direction');
     _controlSocket!.add(_remoteKeyInject(keyCode, direction));
+    await _controlSocket!.flush();
+  }
+
+  Future<void> sendImeKey(int keyCode) async {
+    if (!_isConnected || _controlSocket == null) return;
+    _log('Sending IME Key $keyCode');
+    _controlSocket!.add(_remoteImeKeyInject(keyCode));
+    await _controlSocket!.flush();
+  }
+
+  Future<void> sendAppLaunch(String uri) async {
+    if (!_isConnected || _controlSocket == null) return;
+    _log('Launch: $uri');
+    _controlSocket!.add(_remoteAppLaunch(uri));
     await _controlSocket!.flush();
   }
 
