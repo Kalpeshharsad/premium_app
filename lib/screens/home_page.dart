@@ -316,10 +316,10 @@ class _HomePageState extends State<HomePage> {
             bottom: 20,
             left: 20,
             right: 20,
-            child: ValueListenableBuilder<String>(
+            child: ValueListenableBuilder<List<String>>(
               valueListenable: WifiService.logNotifier,
-              builder: (context, log, _) {
-                if (log == 'WiFi Service Ready' || log.isEmpty) return const SizedBox.shrink();
+              builder: (context, logs, _) {
+                if (logs.length <= 1 && logs.first == 'WiFi Service Ready') return const SizedBox.shrink();
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
@@ -327,10 +327,20 @@ class _HomePageState extends State<HomePage> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.white10),
                   ),
-                  child: Text(
-                    log,
-                    style: const TextStyle(color: Colors.white70, fontSize: 10, fontFamily: 'monospace'),
-                    textAlign: TextAlign.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: logs.asMap().entries.map((entry) {
+                      final isLast = entry.key == logs.length - 1;
+                      return Text(
+                        entry.value,
+                        style: TextStyle(
+                          color: isLast ? Colors.white : Colors.white38,
+                          fontSize: 9,
+                          fontFamily: 'monospace',
+                        ),
+                        textAlign: TextAlign.center,
+                      );
+                    }).toList(),
                   ),
                 );
               },

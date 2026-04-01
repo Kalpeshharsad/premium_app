@@ -119,6 +119,8 @@ Uint8List _secret(Uint8List alpha) => _outer(_fb(40, _fb(1, alpha)));
 
 Uint8List _remoteConfigure() {
   final deviceInfo = Uint8List.fromList([
+    ..._fv(1, 1), // model = 1
+    ..._fs(2, "TCL"), // vendor = TCL
     ..._fv(3, 1),
     ..._fs(4, "1"),
     ..._fs(5, "atvremote"),
@@ -195,11 +197,14 @@ bool _hasField(Uint8List msg, int field) {
 // ─────────────────────────────────────────────
 
 class WifiService {
-  static final logNotifier = ValueNotifier<String>('WiFi Service Ready');
+  static final logNotifier = ValueNotifier<List<String>>(['WiFi Service Ready']);
   
   void _log(String msg) {
     debugPrint('WifiService: $msg');
-    logNotifier.value = msg;
+    final logs = List<String>.from(logNotifier.value);
+    logs.add(msg);
+    if (logs.length > 5) logs.removeAt(0);
+    logNotifier.value = logs;
   }
 
   bool _isConnected = false;
