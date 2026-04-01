@@ -232,8 +232,28 @@ class WifiService {
       
       final ready = Completer<bool>();
       controlReader.stream.listen((msg) {
-        _log('Recv: ${msg.map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
         if (_hasField(msg, 1)) { // remote_configure
+          try {
+             // Basic extraction of features and name
+             int i = 0;
+             // Skip outer field 1 (remote_configure) header
+             while (i < msg.length && msg[i++] & 0x80 != 0) {} 
+             // Next is varint len of configure object
+             while (i < msg.length && msg[i++] & 0x80 != 0) {}
+             
+             // Inside Configure: Field 1 is code1 (varint), Field 2 is device_info (len-delim)
+             int features = 0;
+             if (i < msg.length && msg[i] >> 3 == 1) { // Field 1
+               i++; int s = 0; while (i < msg.length) { final b = msg[i++]; features |= (b & 0x7F) << s; if (b & 0x80 == 0) break; s += 7; }
+             }
+             _log('TV Features: $features');
+             
+             // Very crude vendor search
+             final s = utf8.decode(msg, allowMalformed: true);
+             if (s.contains('TCL')) _log('TCL TV detected');
+             else if (s.contains('Sony')) _log('Sony TV detected');
+          } catch (_) {}
+          
           _log('Responding to Configure');
           _controlSocket?.add(_remoteConfigure());
           _controlSocket?.flush();
