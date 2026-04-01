@@ -14,7 +14,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final ADBService _adbService = ADBService();
   final WifiService _wifiService = WifiService();
   final DiscoveryService _discoveryService = DiscoveryService();
@@ -41,6 +41,17 @@ class _HomePageState extends State<HomePage> {
       }
     });
     _discoveryService.startDiscovery();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Auto-reconnect silently if we were connected to WiFi mode
+      if (_isWifiMode && !_wifiService.isConnected && _wifiService.lastIP != null) {
+        _handleConnect(_wifiService.lastIP, silent: true);
+      }
+    }
   }
 
   Future<void> _loadInitialData() async {
@@ -61,6 +72,7 @@ class _HomePageState extends State<HomePage> {
     _ipController.dispose();
     _textController.dispose();
     _pinController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -74,7 +86,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _handleConnect([String? ip]) async {
+  void _handleConnect(String? ip, {bool silent = false}) async {
     final ipToConnect = ip ?? _ipController.text;
     if (ipToConnect.isEmpty) return;
 
@@ -82,7 +94,7 @@ class _HomePageState extends State<HomePage> {
       _ipController.text = ip;
     }
 
-    setState(() => _isConnecting = true);
+    if (!silent) setState(() => _isConnecting = true);
     
     bool success = false;
     if (_isWifiMode) {
@@ -108,12 +120,13 @@ class _HomePageState extends State<HomePage> {
     setState(() => _isConnecting = false);
     
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connected to TV')),
-      );
+      if (!silent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Connected to TV')),
+        );
+      }
       // Save the connected device
       String name = 'Android TV ($ipToConnect)';
-      // Try to find a better name if it was discovered
       try {
         final discovered = _discoveredDevices.firstWhere((d) => d.ipAddress == ipToConnect);
         name = discovered.name;
@@ -121,7 +134,7 @@ class _HomePageState extends State<HomePage> {
       
       await _storageService.saveDevice(TvDevice(ipAddress: ipToConnect, name: name));
       _loadSavedDevices();
-    } else {
+    } else if (!silent) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Connection failed. Check IP and Developer Options.')),
       );
@@ -480,7 +493,7 @@ class _HomePageState extends State<HomePage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : IconButton(
-                    onPressed: () => _handleConnect(),
+                    onPressed: () => _handleConnect(null),
                     icon: Icon(Icons.sync_rounded, color: AppTheme.primaryColor),
                   ),
           ],

@@ -206,15 +206,19 @@ class WifiService {
   }
 
   bool _isConnected = false;
+  bool _isConnecting = false;
   bool _isPairing = false;
+  String? _lastIP;
   String? lastError;
   SecureSocket? _pairingSocket;
   SecureSocket? _controlSocket;
   _MsgReader? _reader;
   X509Certificate? _serverCert;
 
-  bool get isConnected => _isConnected;
+  bool get isConnected => _isConnected && _controlSocket != null;
+  bool get isConnecting => _isConnecting;
   bool get isPairing => _isPairing;
+  String? get lastIP => _lastIP;
 
   SecurityContext _makeContext() {
     final ctx = SecurityContext(withTrustedRoots: false);
@@ -224,14 +228,23 @@ class WifiService {
   }
 
   Future<bool> connect(String ip) async {
+    if (isConnected && _lastIP == ip) return true;
+    _isConnecting = true;
+    _lastIP = ip;
+    
     final paired = await KeyService.isWifiPaired();
-    if (!paired) { _isPairing = true; return false; }
+    if (!paired) { _isPairing = true; _isConnecting = false; return false; }
     try {
       _controlSocket = await SecureSocket.connect(ip, 6466, context: _makeContext(), onBadCertificate: (c) => true, timeout: const Duration(seconds: 5));
       _isConnected = true;
       
       final controlReader = _MsgReader();
-      _controlSocket!.listen((d) => controlReader.feed(d), onDone: disconnect, onError: (_) => disconnect());
+      _controlSocket!.listen(
+        (d) => controlReader.feed(d), 
+        onDone: () { _log('Control socket closed'); disconnect(); },
+        onError: (e) { _log('Control socket error: $e'); disconnect(); },
+        cancelOnError: true,
+      );
       
       final ready = Completer<bool>();
       controlReader.stream.listen((msg) {
@@ -418,9 +431,10 @@ class WifiService {
   }
 
   void disconnect() {
-    _isConnected = false; _isPairing = false;
+    _isConnected = false; _isPairing = false; _isConnecting = false;
     _pairingSocket?.destroy(); _controlSocket?.destroy();
     _pairingSocket = null; _controlSocket = null;
+    _log('Disconnected');
   }
 
   // ── ASN.1 extraction helpers ─────────────────────────────────────────────
