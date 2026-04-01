@@ -306,6 +306,10 @@ class _HomePageState extends State<HomePage> {
                   _buildChannelControls(),
                   const SizedBox(height: 40),
                   _buildBrightnessControl(),
+                  if (_isWifiMode) ...[
+                    const SizedBox(height: 40),
+                    _buildDiagnostics(),
+                  ],
                   const SizedBox(height: 100),
                 ],
               ),
@@ -741,6 +745,42 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.white60)),
       ],
+    );
+  }
+
+  Widget _buildDiagnostics() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('DIAGNOSTICS (WIFI)', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildTestBtn('M1 (82-S)', 82, 3), // Standard Menu Short
+            _buildTestBtn('M2 (176)', 176, 3), // Settings
+            _buildTestBtn('M3 (256)', 256, 3), // System Menu
+            _buildTestBtn('M4 (178)', 178, 3), // Input
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTestBtn(String label, int code, int dir) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            padding: EdgeInsets.zero,
+            backgroundColor: Colors.white.withValues(alpha: 0.05),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onPressed: () => _wifiService.sendKeyEventWithDirection(code, dir),
+          child: Text(label, style: const TextStyle(fontSize: 8, color: Colors.white70)),
+        ),
+      ),
     );
   }
 }

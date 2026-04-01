@@ -123,12 +123,12 @@ Uint8List _remoteConfigure() {
     ..._fs(2, "TCL"), // vendor = TCL
     ..._fv(3, 1),
     ..._fs(4, "1"),
-    ..._fs(5, "atvremote"),
+    ..._fs(5, "TCL Remote"), // Identifying as TCL Remote
     ..._fs(6, "1.0.0"),
   ]);
   return _frame(Uint8List.fromList([
     ..._fb(1, Uint8List.fromList([
-      ..._fv(1, 639), // Features: PING|KEY|IME|VOICE|UNKNOWN_1|POWER|VOLUME|APP_LINK
+      ..._fv(1, 639), 
       ..._fb(2, deviceInfo),
     ])),
   ]));
@@ -390,18 +390,21 @@ class WifiService {
     int finalCode = keyCode;
     if (keyCode == 66) finalCode = 23;  // ENTER -> DPAD_CENTER
     
-    _log('Sending Key $finalCode (orig:$keyCode)');
-    
     // Most TVs respond well to SHORT (3)
     if (finalCode == 82 || finalCode == 166 || finalCode == 167) {
-      // For Menu/Channels, some TVs (TCL) ONLY accept explicit 1->2 sequence
-      _log('Using 1->2 sequence for $finalCode');
-      _controlSocket!.add(_remoteKeyInject(finalCode, 1)); // START_LONG / DOWN
+      // Use 1->2 sequence for specialized buttons
+      await sendKeyEventWithDirection(finalCode, 1);
       await Future.delayed(const Duration(milliseconds: 150));
-      _controlSocket!.add(_remoteKeyInject(finalCode, 2)); // END_LONG / UP
+      await sendKeyEventWithDirection(finalCode, 2);
     } else {
-      _controlSocket!.add(_remoteKeyInject(finalCode, 3)); // SHORT
+      await sendKeyEventWithDirection(finalCode, 3);
     }
+  }
+
+  Future<void> sendKeyEventWithDirection(int keyCode, int direction) async {
+    if (!_isConnected || _controlSocket == null) return;
+    _log('Sending Key $keyCode dir:$direction');
+    _controlSocket!.add(_remoteKeyInject(keyCode, direction));
     await _controlSocket!.flush();
   }
 
