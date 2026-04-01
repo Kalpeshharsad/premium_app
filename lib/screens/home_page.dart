@@ -572,27 +572,9 @@ class _HomePageState extends State<HomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(icon: const Icon(Icons.volume_down_rounded), onPressed: () {
-                  if (_isWifiMode) {
-                    _wifiService.sendKeyEvent(ADBService.KEYCODE_VOLUME_DOWN);
-                  } else {
-                    _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_DOWN);
-                  }
-                }),
-                IconButton(icon: const Icon(Icons.volume_off_rounded, size: 20, color: Colors.white24), onPressed: () {
-                  if (_isWifiMode) {
-                    _wifiService.sendKeyEvent(ADBService.KEYCODE_MUTE);
-                  } else {
-                    _adbService.sendKeyEvent(ADBService.KEYCODE_MUTE);
-                  }
-                }),
-                IconButton(icon: const Icon(Icons.volume_up_rounded), onPressed: () {
-                  if (_isWifiMode) {
-                    _wifiService.sendKeyEvent(ADBService.KEYCODE_VOLUME_UP);
-                  } else {
-                    _adbService.sendKeyEvent(ADBService.KEYCODE_VOLUME_UP);
-                  }
-                }),
+                IconButton(icon: const Icon(Icons.volume_down_rounded), onPressed: () => _sendKey(ADBService.KEYCODE_VOLUME_DOWN)),
+                IconButton(icon: const Icon(Icons.volume_off_rounded, size: 20, color: Colors.white24), onPressed: () => _sendKey(ADBService.KEYCODE_MUTE)),
+                IconButton(icon: const Icon(Icons.volume_up_rounded), onPressed: () => _sendKey(ADBService.KEYCODE_VOLUME_UP)),
               ],
             ),
           ),
@@ -614,21 +596,9 @@ class _HomePageState extends State<HomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(icon: const Icon(Icons.keyboard_arrow_down_rounded), onPressed: () {
-                  if (_isWifiMode) {
-                    _wifiService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_DOWN);
-                  } else {
-                    _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_DOWN);
-                  }
-                }),
+                IconButton(icon: const Icon(Icons.keyboard_arrow_down_rounded), onPressed: () => _sendKey(ADBService.KEYCODE_CHANNEL_DOWN)),
                 const Icon(Icons.swap_vert_rounded, size: 20, color: Colors.white24),
-                IconButton(icon: const Icon(Icons.keyboard_arrow_up_rounded), onPressed: () {
-                  if (_isWifiMode) {
-                    _wifiService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_UP);
-                  } else {
-                    _adbService.sendKeyEvent(ADBService.KEYCODE_CHANNEL_UP);
-                  }
-                }),
+                IconButton(icon: const Icon(Icons.keyboard_arrow_up_rounded), onPressed: () => _sendKey(ADBService.KEYCODE_CHANNEL_UP)),
               ],
             ),
           ),
@@ -681,21 +651,23 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _sendKey(int keyCode) {
+    if (_isWifiMode) {
+      if (keyCode == 82 || keyCode == 166 || keyCode == 167) {
+        _wifiService.sendImeKey(keyCode);
+      } else {
+        _wifiService.sendKeyEvent(keyCode);
+      }
+    } else {
+      _adbService.sendKeyEvent(keyCode);
+    }
+  }
+
   Widget _buildCircularButton(IconData icon, String label, int keyCode, {Color color = Colors.white10}) {
     return Column(
       children: [
         GestureDetector(
-          onTap: () {
-            if (_isWifiMode) {
-              if (keyCode == 82 || keyCode == 166 || keyCode == 167) {
-                _wifiService.sendImeKey(keyCode);
-              } else {
-                _wifiService.sendKeyEvent(keyCode);
-              }
-            } else {
-              _adbService.sendKeyEvent(keyCode);
-            }
-          },
+          onTap: () => _sendKey(keyCode),
           child: Container(
             width: 60,
             height: 60,
