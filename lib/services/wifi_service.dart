@@ -362,20 +362,21 @@ class WifiService {
       return;
     }
     
-    // Map keycodes for better Google TV WiFi compatibility
     int finalCode = keyCode;
     if (keyCode == 66) finalCode = 23;  // ENTER -> DPAD_CENTER
     
-    // Try KEYCODE_TV (170) as requested/found in reference
-    if (keyCode == 82) {
-       _log('Trying Menu as TV (170)');
-       finalCode = 170; 
-    }
-    
     _log('Sending Key $finalCode (orig:$keyCode)');
     
-    // Always use direction 3 (SHORT) for V2 compatibility
-    _controlSocket!.add(_remoteKeyInject(finalCode, 3));
+    // Most TVs respond well to SHORT (3)
+    if (finalCode == 82 || finalCode == 166 || finalCode == 167) {
+      // For Menu/Channels, some TVs (TCL) ONLY accept explicit 1->2 sequence
+      _log('Using 1->2 sequence for $finalCode');
+      _controlSocket!.add(_remoteKeyInject(finalCode, 1)); // START_LONG / DOWN
+      await Future.delayed(const Duration(milliseconds: 150));
+      _controlSocket!.add(_remoteKeyInject(finalCode, 2)); // END_LONG / UP
+    } else {
+      _controlSocket!.add(_remoteKeyInject(finalCode, 3)); // SHORT
+    }
     await _controlSocket!.flush();
   }
 
