@@ -119,30 +119,28 @@ Uint8List _secret(Uint8List alpha) => _outer(_fb(40, _fb(1, alpha)));
 
 Uint8List _remoteConfigure() {
   final deviceInfo = Uint8List.fromList([
-    ..._fv(1, 1), // model = 1
-    ..._fs(2, "TCL"), // vendor = TCL
+    ..._fv(1, 1), 
+    ..._fs(2, "TCL"), 
     ..._fv(3, 1),
-    ..._fs(4, "1"),
-    ..._fs(5, "TCL Remote"), // Identifying as TCL Remote
+    ..._fs(4, "1.0.0"),
+    ..._fs(5, "atvremote"), 
     ..._fs(6, "1.0.0"),
   ]);
-  return _frame(Uint8List.fromList([
-    ..._fb(1, Uint8List.fromList([
-      ..._fv(1, 639), 
-      ..._fb(2, deviceInfo),
-    ])),
-  ]));
+  return _outer(_fb(1, Uint8List.fromList([
+    ..._fv(1, 639), 
+    ..._fb(2, deviceInfo),
+  ])));
 }
 
-Uint8List _remoteSetActive(int active) => _frame(_fb(2, _fv(1, active)));
-Uint8List _remotePingResponse(int val1) => _frame(_fb(9, _fv(1, val1)));
+Uint8List _remoteSetActive(int active) => _outer(_fb(2, _fv(1, active)));
+Uint8List _remotePingResponse(int val1) => _outer(_fb(9, _fv(1, val1)));
 
 Uint8List _remoteKeyInject(int keyCode, int direction) {
   final inject = Uint8List.fromList([
     ..._fv(1, keyCode),
     ..._fv(2, direction),
   ]);
-  return _frame(_fb(10, inject));
+  return _outer(_fb(10, inject));
 }
 
 // ─────────────────────────────────────────────
